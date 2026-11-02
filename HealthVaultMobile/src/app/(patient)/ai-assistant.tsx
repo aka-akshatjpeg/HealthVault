@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/services/api';
 import { Colors } from '@/constants';
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
 });
 
-const markdownStyles = {
+const markdownStyles: Record<string, TextStyle> = {
   body: { fontSize: 15, lineHeight: 22, color: Colors.text },
   strong: { fontWeight: '700', color: Colors.primary },
   em: { fontStyle: 'italic' },
@@ -165,3 +165,4 @@ const markdownStyles = {
   bullet_list: { marginVertical: 4 },
   list_item: { marginVertical: 2 },
 };
+
