@@ -33,7 +33,7 @@ backend/temp*.txt
 backend/out*.txt
 backend/test_ai_output.json
 temp_auth.py
-models.py
+/models.py
 backend/add_video_link.py
 backend/append_models.py
 backend/find_bad_urls.py
@@ -51,3 +51,4 @@ HealthVaultMobile/LICENSE
 .DS_Store
 Thumbs.db
 .vscode/
+
