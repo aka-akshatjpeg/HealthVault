@@ -23,7 +23,7 @@ Edit `backend/.env` and set a private `SECRET_KEY`. Add a `GEMINI_API_KEY` only 
 python app.py
 ```
 
-The database tables are created automatically on startup. The local SQLite database and uploaded files stay on your machine.
+This starts the Flask development server on port `5000`. Database tables are created automatically on startup. The local SQLite database and uploaded files stay on your machine.
 
 ## Mobile setup
 
@@ -38,7 +38,7 @@ The example URL targets the Android emulator. For a physical phone, set `EXPO_PU
 
 ## Configuration and data
 
-Keep API keys, secret values, real patient information, local databases, and uploaded documents out of Git. The `.env.example` files contain placeholders and can be committed safely.
+Keep API keys, secret values, real patient information, local databases, and uploaded documents out of Git. The `.env.example` files contain placeholders and can be committed safely. The included server is for local development; use a production WSGI server and deployment settings before hosting it publicly.
 
 ## License
 
