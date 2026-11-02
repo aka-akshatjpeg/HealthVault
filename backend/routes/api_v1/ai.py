@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import os
+import json
 import markdown
 from models import db, ChatMessage, User
 
@@ -15,10 +16,16 @@ def get_gemini_client():
     return client, None
 
 def _get_patient():
-    identity = get_jwt_identity()
+    raw_identity = get_jwt_identity()
+    try:
+        identity = json.loads(raw_identity) if isinstance(raw_identity, str) else raw_identity
+    except (TypeError, json.JSONDecodeError):
+        identity = {'user_id': raw_identity, 'role': 'patient'}
+    if not isinstance(identity, dict):
+        return None, (jsonify({'error': 'Invalid account identity.'}), 401)
     if identity.get('role') != 'patient':
         return None, (jsonify({'error': 'Only patients can use the AI assistant.'}), 403)
-    user = User.query.get(identity['user_id'])
+    user = db.session.get(User, identity.get('user_id'))
     if not user or not user.patient:
         return None, (jsonify({'error': 'Patient not found.'}), 404)
     return user.patient, None

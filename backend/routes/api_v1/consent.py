@@ -18,7 +18,7 @@ def _get_patient():
         
     if identity.get('role') != 'patient':
         return None, (jsonify({'error': 'Patient account required.'}), 403)
-    user = User.query.get(identity['user_id'])
+    user = db.session.get(User, identity['user_id'])
     if not user or not user.patient:
         return None, (jsonify({'error': 'Patient not found.'}), 404)
     return user.patient, None
@@ -64,9 +64,9 @@ def approve(request_id):
     if not approved_cats:
         return jsonify({'error': 'Please select at least one record category to approve.'}), 400
     access_request.status = 'approved'
-    access_request.responded_at = datetime.utcnow()
+    access_request.responded_at = utils.utcnow()
     access_request.approved_categories = ','.join(approved_cats)
-    access_request.expires_at = datetime.utcnow() + timedelta(hours=access_request.duration_hours)
+    access_request.expires_at = utils.utcnow() + timedelta(hours=access_request.duration_hours)
     utils.log_audit_event(
         patient_id=patient.id, actor_id=patient.user_id,
         actor_name=patient.full_name, action='approved',
@@ -87,7 +87,7 @@ def deny(request_id):
     if not access_request:
         return jsonify({'error': 'Request not found or already responded.'}), 404
     access_request.status = 'denied'
-    access_request.responded_at = datetime.utcnow()
+    access_request.responded_at = utils.utcnow()
     utils.log_audit_event(
         patient_id=patient.id, actor_id=patient.user_id,
         actor_name=patient.full_name, action='denied',

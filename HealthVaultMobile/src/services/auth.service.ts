@@ -1,13 +1,6 @@
 import { api } from './api';
 import * as SecureStore from 'expo-secure-store';
-
-export interface LoginResponse {
-  otp_pending: boolean;
-  user_id: string;
-  otp_code: string;
-  role: string;
-  message: string;
-}
+import { getAuth, signOut } from '@react-native-firebase/auth';
 
 export interface TokenResponse {
   access_token: string;
@@ -23,13 +16,12 @@ export interface TokenResponse {
 }
 
 export const authService = {
-  async login(email: string, password: string): Promise<LoginResponse> {
-    const res = await api.post('/auth/login', { email, password });
-    return res.data;
-  },
-
-  async verifyOtp(userId: string, otp: string): Promise<TokenResponse> {
-    const res = await api.post('/auth/verify-otp', { user_id: userId, otp });
+  /**
+   * Exchange a Firebase ID token for a HealthVault JWT pair.
+   * Called after every successful Firebase sign-in (phone, Google, Apple).
+   */
+  async firebaseLogin(idToken: string, profile?: { full_name?: string }): Promise<TokenResponse> {
+    const res = await api.post('/auth/firebase-login', { id_token: idToken, ...(profile || {}) });
     const data: TokenResponse = res.data;
     await SecureStore.setItemAsync('access_token', data.access_token);
     await SecureStore.setItemAsync('refresh_token', data.refresh_token);
@@ -37,8 +29,9 @@ export const authService = {
     return data;
   },
 
-  async register(payload: Record<string, string>): Promise<TokenResponse> {
-    const res = await api.post('/auth/register', payload);
+  /** Link a verified Firebase phone identity to an existing account. */
+  async linkExistingAccount(idToken: string, email: string, password: string): Promise<TokenResponse> {
+    const res = await api.post('/auth/firebase-link', { id_token: idToken, email, password });
     const data: TokenResponse = res.data;
     await SecureStore.setItemAsync('access_token', data.access_token);
     await SecureStore.setItemAsync('refresh_token', data.refresh_token);
@@ -47,6 +40,7 @@ export const authService = {
   },
 
   async logout() {
+    try { await signOut(getAuth()); } catch { /* No Firebase user may be signed in. */ }
     await SecureStore.deleteItemAsync('access_token');
     await SecureStore.deleteItemAsync('refresh_token');
     await SecureStore.deleteItemAsync('user');

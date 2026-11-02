@@ -22,7 +22,7 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={Colors.primary} />}
+        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => { void refetch(); }} tintColor={Colors.primary} />}
       >
         {notifications.length === 0 ? (
           <Text style={styles.empty}>No notifications yet.</Text>

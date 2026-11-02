@@ -12,11 +12,7 @@ interface User {
 interface AuthState {
   user: User | null;
   isLoading: boolean;
-  pendingUserId: string | null;
-  pendingRole: string | null;
   setUser: (user: User | null) => void;
-  setPending: (userId: string, role: string) => void;
-  clearPending: () => void;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
 }
@@ -24,12 +20,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: true,
-  pendingUserId: null,
-  pendingRole: null,
 
   setUser: (user) => set({ user, isLoading: false }),
-  setPending: (userId, role) => set({ pendingUserId: userId, pendingRole: role }),
-  clearPending: () => set({ pendingUserId: null, pendingRole: null }),
 
   logout: async () => {
     await authService.logout();

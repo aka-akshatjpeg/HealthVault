@@ -14,11 +14,17 @@
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from datetime import datetime
+from sqlalchemy import Index
+from datetime import datetime, timezone
 import uuid
 
 # db is our database connection object — we import this everywhere we need the database
 db = SQLAlchemy()
+
+
+def utcnow():
+    """Return a naive UTC datetime for compatibility with existing SQL columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def generate_uuid():
@@ -32,14 +38,20 @@ def generate_uuid():
 # =============================================================================
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
+    __table_args__ = (Index('ix_users_firebase_uid', 'firebase_uid', unique=True),)
 
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)  # NEVER store plain password
+    firebase_uid = db.Column(db.String(128), nullable=True)
     role = db.Column(db.String(20), nullable=False)  # 'patient', 'doctor', 'lab', 'admin'
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     last_login = db.Column(db.DateTime)
+
+    @property
+    def public_email(self):
+        return '' if self.email.endswith('@healthvault.invalid') else self.email
 
     # Relationships — tell SQLAlchemy how tables connect to each other
     patient = db.relationship('Patient', backref='user', uselist=False, cascade='all, delete-orphan')
@@ -64,8 +76,16 @@ class Organization(db.Model):
     email = db.Column(db.String(120))
     city = db.Column(db.String(100))
     state = db.Column(db.String(100))
+    pincode = db.Column(db.String(20))
+    website = db.Column(db.String(255))
+    opening_hours = db.Column(db.String(100))
+    closing_hours = db.Column(db.String(100))
+    working_days = db.Column(db.String(100))
+    emergency_hours = db.Column(db.String(100))
+    services_offered = db.Column(db.Text)
+    tests_available = db.Column(db.Text)
     is_verified = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Organization {self.name}>'
@@ -85,8 +105,20 @@ class Provider(db.Model):
     specialty = db.Column(db.String(100))
     registration_number = db.Column(db.String(50))  # Medical council registration
     phone = db.Column(db.String(20))
+    profile_photo = db.Column(db.String(255))
+    gender = db.Column(db.String(30))
+    qualifications = db.Column(db.Text)
+    experience_years = db.Column(db.Integer)
+    consultation_fee = db.Column(db.Integer)
+    consultation_type = db.Column(db.String(50))
+    working_days = db.Column(db.String(100))
+    working_hours = db.Column(db.String(200))
+    slot_duration = db.Column(db.Integer)
+    services = db.Column(db.Text)
+    bio = db.Column(db.Text)
+    languages = db.Column(db.String(255))
     is_verified = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     organization = db.relationship('Organization', backref='providers')
 
@@ -112,12 +144,11 @@ class Patient(db.Model):
     city = db.Column(db.String(100))
     state = db.Column(db.String(100))
     profile_photo = db.Column(db.String(255))  # path to photo file
-    abha_id = db.Column(db.String(20))  # ABHA (Ayushman Bharat) ID — optional
     aadhaar_number = db.Column(db.String(12), unique=True)   # 12-digit Aadhaar number
     aadhaar_verified = db.Column(db.Boolean, default=False)  # True after OTP verification
     abha_id = db.Column(db.String(20))  # ABHA (Ayushman Bharat) ID — optional
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships — all health records linked to this patient
     health_identity = db.relationship('HealthIdentity', backref='patient', uselist=False, cascade='all, delete-orphan')
@@ -158,7 +189,7 @@ class HealthIdentity(db.Model):
     patient_id = db.Column(db.String(36), db.ForeignKey('patients.id'), nullable=False)
     hv_id = db.Column(db.String(20), unique=True, nullable=False)  # e.g. HV-IND-8F42-K92P
     qr_code_path = db.Column(db.String(255))  # path to generated QR image
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<HealthIdentity {self.hv_id}>'
@@ -181,7 +212,7 @@ class EmergencyProfile(db.Model):
     emergency_contact_relation = db.Column(db.String(50))
     organ_donor = db.Column(db.Boolean, default=False)
     special_notes = db.Column(db.Text)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     def __repr__(self):
         return f'<EmergencyProfile for patient {self.patient_id}>'
@@ -205,7 +236,7 @@ class Condition(db.Model):
     # Provenance — where did this record come from?
     source = db.Column(db.String(50), default='self_entered')  # 'provider', 'patient_uploaded', 'self_entered'
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Condition {self.condition_name}>'
@@ -227,7 +258,7 @@ class Allergy(db.Model):
     notes = db.Column(db.Text)
     source = db.Column(db.String(50), default='self_entered')
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Allergy {self.allergen}>'
@@ -252,7 +283,7 @@ class Medication(db.Model):
     notes = db.Column(db.Text)
     source = db.Column(db.String(50), default='self_entered')
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Medication {self.medicine_name}>'
@@ -277,7 +308,7 @@ class DiagnosticReport(db.Model):
     document_path = db.Column(db.String(255))            # Path to PDF report
     source = db.Column(db.String(50), default='patient_uploaded')
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     # Each report has multiple individual test results
     observations = db.relationship('Observation', backref='report', cascade='all, delete-orphan')
@@ -302,7 +333,7 @@ class Observation(db.Model):
     reference_range = db.Column(db.String(50))                # e.g. "13.0 - 17.0"
     is_abnormal = db.Column(db.Boolean, default=False)        # True if outside normal range
     interpretation = db.Column(db.String(20))                 # 'normal', 'high', 'low', 'critical'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Observation {self.test_name}: {self.value} {self.unit}>'
@@ -327,7 +358,7 @@ class Procedure(db.Model):
     document_path = db.Column(db.String(255))
     source = db.Column(db.String(50), default='patient_uploaded')
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Procedure {self.procedure_name}>'
@@ -351,7 +382,7 @@ class Immunization(db.Model):
     document_path = db.Column(db.String(255))       # Certificate/proof
     source = db.Column(db.String(50), default='self_entered')
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Immunization {self.vaccine_name}>'
@@ -375,7 +406,7 @@ class ImagingStudy(db.Model):
     document_path = db.Column(db.String(255))
     source = db.Column(db.String(50), default='patient_uploaded')
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<ImagingStudy {self.imaging_type} - {self.body_region}>'
@@ -408,7 +439,7 @@ class Encounter(db.Model):
     document_path = db.Column(db.String(255))
     source = db.Column(db.String(50), default='provider')
     source_organization = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     provider = db.relationship('Provider', backref='encounters')
 
@@ -437,8 +468,8 @@ class Document(db.Model):
     source = db.Column(db.String(50), default='patient_uploaded')
     source_organization = db.Column(db.String(200))
     is_archived = db.Column(db.Boolean, default=False)
-    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    upload_date = db.Column(db.DateTime, default=utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Document {self.title}>'
@@ -457,7 +488,7 @@ class FamilyHistory(db.Model):
     condition = db.Column(db.String(200))
     age_at_onset = db.Column(db.String(50))
     notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<FamilyHistory {self.relative}: {self.condition}>'
@@ -477,7 +508,7 @@ class AccessRequest(db.Model):
     requested_categories = db.Column(db.String(500))  # comma-separated: "lab_reports,medications"
     duration_hours = db.Column(db.Integer, default=24)
     status = db.Column(db.String(20), default='pending')  # 'pending', 'approved', 'denied', 'revoked', 'expired'
-    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    requested_at = db.Column(db.DateTime, default=utcnow)
     responded_at = db.Column(db.DateTime)
     expires_at = db.Column(db.DateTime)
     approved_categories = db.Column(db.String(500))  # What the patient actually approved
@@ -485,7 +516,7 @@ class AccessRequest(db.Model):
     provider = db.relationship('Provider', backref='access_requests')
 
     def is_expired(self):
-        if self.expires_at and datetime.utcnow() > self.expires_at:
+        if self.expires_at and utcnow() > self.expires_at:
             return True
         return False
 
@@ -506,7 +537,7 @@ class ShareLink(db.Model):
     shared_categories = db.Column(db.String(500))
     purpose = db.Column(db.String(200))
     recipient_name = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     access_count = db.Column(db.Integer, default=0)
@@ -514,7 +545,7 @@ class ShareLink(db.Model):
     patient = db.relationship('Patient', backref='share_links')
 
     def is_expired(self):
-        return datetime.utcnow() > self.expires_at
+        return utcnow() > self.expires_at
 
     def __repr__(self):
         return f'<ShareLink {self.share_token}>'
@@ -539,7 +570,7 @@ class AuditEvent(db.Model):
     purpose = db.Column(db.String(200))
     status = db.Column(db.String(20))               # 'success', 'denied', 'expired'
     ip_address = db.Column(db.String(50))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
     patient = db.relationship('Patient', backref='audit_events')
 
@@ -561,7 +592,7 @@ class Notification(db.Model):
     notification_type = db.Column(db.String(50))    # 'new_report', 'access_request', 'access_approved', etc.
     is_read = db.Column(db.Boolean, default=False)
     related_id = db.Column(db.String(36))           # ID of the related record (e.g. report ID)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def __repr__(self):
         return f'<Notification {self.title}>'
@@ -573,12 +604,11 @@ class OTPCode(db.Model):
     code = db.Column(db.String(6), nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     user = db.relationship('User', backref='otp_codes')
 
     def is_valid(self):
-        from datetime import datetime as dt
-        return not self.used and dt.utcnow() < self.expires_at
+        return not self.used and utcnow() < self.expires_at
 
 class ChatMessage(db.Model):
     __tablename__ = 'chat_messages'
@@ -586,7 +616,7 @@ class ChatMessage(db.Model):
     patient_id = db.Column(db.String(36), db.ForeignKey('patients.id'), nullable=False)
     role = db.Column(db.String(20), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
 class AadhaarOTP(db.Model):
     __tablename__ = 'aadhaar_otps'
@@ -595,9 +625,8 @@ class AadhaarOTP(db.Model):
     code = db.Column(db.String(6), nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def is_valid(self):
-        from datetime import datetime as dt
-        return not self.used and dt.utcnow() < self.expires_at
+        return not self.used and utcnow() < self.expires_at
 

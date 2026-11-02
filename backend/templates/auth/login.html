@@ -214,6 +214,13 @@
   .auth-alert.warning { background: #FFFBEB; color: #92400E; border: 1px solid #FCD34D; }
   .auth-alert.success { background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; }
   .auth-alert.info { background: #EFF6FF; color: #1E40AF; border: 1px solid #93C5FD; }
+  .auth-provider-section { margin: 8px 0 20px; }
+  .auth-provider-buttons { display: grid; gap: 10px; }
+  .auth-provider-btn { width: 100%; min-height: 48px; border: 1px solid #D7E0EB; border-radius: 12px; background: #fff; color: #0F172A; font-weight: 600; }
+  .auth-provider-btn:disabled { opacity: .55; cursor: not-allowed; }
+  #firebase-phone-panel, #firebase-profile-panel { margin-top: 14px; }
+  #firebase-phone-panel .auth-input, #firebase-profile-panel .auth-input { margin-bottom: 12px; }
+  #firebase-auth-status { margin-top: 12px; }
   
   body.dark-mode .auth-alert.danger { background: rgba(153,27,27,0.1); border-color: rgba(153,27,27,0.3); color: #FCA5A5; }
   body.dark-mode .auth-alert.warning { background: rgba(146,64,14,0.1); border-color: rgba(146,64,14,0.3); color: #FCD34D; }
@@ -343,73 +350,33 @@
         {% endif %}
       {% endwith %}
       
-      <form method="POST" action="{{ url_for('auth.login', role=role) }}" novalidate>
-        <div class="auth-form-group">
-          <label class="auth-label" for="login-email">Email address</label>
-          <input id="login-email" type="email" class="auth-input" name="email" placeholder="name@example.com" autocomplete="email" required>
+      <div class="auth-provider-section">
+        <div id="firebase-auth" data-firebase-config='{{ firebase_web_config|tojson|forceescape }}'>
+          <div class="auth-provider-buttons">
+            <button type="button" class="auth-provider-btn" id="firebase-google">Continue with Google</button>
+            <button type="button" class="auth-provider-btn" id="firebase-apple">Continue with Apple</button>
+            <button type="button" class="auth-provider-btn" id="firebase-phone-toggle">Use phone OTP</button>
+          </div>
+          <div id="firebase-phone-panel" hidden>
+            <label class="auth-label" for="firebase-phone">Phone number (include country code)</label>
+            <input id="firebase-phone" class="auth-input" type="tel" autocomplete="tel" placeholder="+91 98765 43210">
+            <button type="button" class="btn-auth-primary" id="firebase-send-code">Send code</button>
+            <div id="firebase-recaptcha"></div>
+            <div id="firebase-code-panel" hidden>
+              <label class="auth-label" for="firebase-code">Verification code</label>
+              <input id="firebase-code" class="auth-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+              <button type="button" class="btn-auth-primary" id="firebase-verify-code">Verify and sign in</button>
+            </div>
+          </div>
+          <div id="firebase-profile-panel" hidden>
+            <p class="auth-subheading">Finish your patient profile to continue.</p>
+            <label class="auth-label" for="firebase-full-name">Full name</label>
+            <input id="firebase-full-name" class="auth-input" autocomplete="name">
+            <button type="button" class="btn-auth-primary" id="firebase-complete-profile">Continue</button>
+          </div>
+          <p id="firebase-auth-status" class="auth-alert info" role="status" aria-live="polite" hidden></p>
         </div>
-        
-        <div class="auth-form-group" style="margin-bottom: 8px;">
-          <label class="auth-label" for="login-password">Password</label>
-          <input id="login-password" type="password" class="auth-input" name="password" placeholder="••••••••" autocomplete="current-password" required>
-          <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
-            <i class="bi bi-eye"></i>
-          </button>
-        </div>
-        <a href="#" class="forgot-password">Forgot password?</a>
-        
-        <button type="submit" class="btn-auth-primary">Sign In</button>
-      </form>
-      
-      <div class="auth-divider">or continue with demo</div>
-      
-      <!-- DEMO ACCOUNTS -->
-      {% if role == 'patient' or not role %}
-      <form method="POST" action="{{ url_for('auth.login', role='patient') }}" style="margin:0;">
-        <input type="hidden" name="email" value="patient@demo.healthvault">
-        <input type="hidden" name="password" value="DemoPassword123!">
-        <button type="submit" class="demo-row">
-          <i class="bi bi-person-circle"></i>
-          <div class="demo-row-info">
-            <span class="demo-row-title">Patient Demo</span>
-            <span class="demo-row-email">patient@demo.healthvault</span>
-          </div>
-        </button>
-      </form>
-      {% endif %}
-
-      {% if role == 'doctor' or not role %}
-      <form method="POST" action="{{ url_for('auth.login', role='doctor') }}" style="margin:0;">
-        <input type="hidden" name="email" value="doctor@demo.healthvault">
-        <input type="hidden" name="password" value="DemoPassword123!">
-        <button type="submit" class="demo-row" style="{% if not role %}margin-top:12px;{% endif %}">
-          <i class="bi bi-heart-pulse-fill"></i>
-          <div class="demo-row-info">
-            <span class="demo-row-title">Doctor Demo</span>
-            <span class="demo-row-email">doctor@demo.healthvault</span>
-          </div>
-        </button>
-      </form>
-      {% endif %}
-
-      {% if role == 'lab' or not role %}
-      <form method="POST" action="{{ url_for('auth.login', role='lab') }}" style="margin:0;">
-        <input type="hidden" name="email" value="lab@demo.healthvault">
-        <input type="hidden" name="password" value="DemoPassword123!">
-        <button type="submit" class="demo-row" style="{% if not role %}margin-top:12px;{% endif %}">
-          <i class="bi bi-bandaid-fill"></i>
-          <div class="demo-row-info">
-            <span class="demo-row-title">Lab Demo</span>
-            <span class="demo-row-email">lab@demo.healthvault</span>
-          </div>
-        </button>
-      </form>
-      {% endif %}
-      
-      <div class="auth-register-link">
-        Not a member? <a href="{{ url_for('auth.register', role=role) }}">Register now</a>
       </div>
-      
       <a href="{{ url_for('auth.portal_select') }}" class="auth-back-link">&larr; Back to portals</a>
     </div>
     
@@ -470,19 +437,8 @@
     
   </div>
 </div>
+{% endblock %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const togglePassword = document.querySelector('#togglePassword');
-    const password = document.querySelector('#login-password');
-    
-    if (togglePassword && password) {
-        togglePassword.addEventListener('click', function (e) {
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
-        });
-    }
-});
-</script>
+{% block extra_scripts %}
+<script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
 {% endblock %}

@@ -16,7 +16,7 @@ export default function AccessHistoryScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={Colors.primary} />}>
+      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => { void refetch(); }} tintColor={Colors.primary} />}>
         <Text style={styles.section}>Access Requests</Text>
         {access_requests.length === 0 ? <Text style={styles.empty}>No access requests yet.</Text> :
           access_requests.map((r: any) => (

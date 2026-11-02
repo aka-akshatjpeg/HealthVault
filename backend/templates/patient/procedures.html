@@ -195,7 +195,7 @@ body.dark-mode .proc-notes { background: var(--input-bg); }
             <!-- Document link if any -->
             {% if p.document_path %}
             <div class="mt-3">
-                <a href="{{ url_for('patient.download_document', filename=p.document_path.split('/')[-1]) }}"
+                    <a href="{{ url_for('patient.download_record_file', filename=p.document_path, download=1) }}"
                    class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-file-earmark-pdf me-1"></i>View Report
                 </a>

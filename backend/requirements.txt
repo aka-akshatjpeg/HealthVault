@@ -7,5 +7,6 @@ pillow
 python-dotenv
 flask-jwt-extended
 flask-cors
+firebase-admin
 markdown
 google-genai

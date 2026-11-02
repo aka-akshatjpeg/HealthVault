@@ -18,7 +18,7 @@ def _get_patient():
         
     if identity.get('role') != 'patient':
         return None, (jsonify({'error': 'Patient account required.'}), 403)
-    user = User.query.get(identity['user_id'])
+    user = db.session.get(User, identity['user_id'])
     if not user or not user.patient:
         return None, (jsonify({'error': 'Patient not found.'}), 404)
     return user.patient, None

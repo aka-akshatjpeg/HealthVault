@@ -124,6 +124,28 @@ def lab_report_detail(report_id):
     return render_template('patient/lab_report_detail.html', patient=patient, report=report)
 
 
+@patient_bp.route('/records/file/<path:filename>')
+@patient_required
+def download_record_file(filename):
+    """Serve a clinical attachment only when it belongs to the signed-in patient."""
+    patient = current_user.patient
+    owned = (
+        Document.query.filter_by(patient_id=patient.id, file_path=filename).first()
+        or DiagnosticReport.query.filter_by(patient_id=patient.id, document_path=filename).first()
+        or Procedure.query.filter_by(patient_id=patient.id, document_path=filename).first()
+        or Immunization.query.filter_by(patient_id=patient.id, document_path=filename).first()
+        or ImagingStudy.query.filter_by(patient_id=patient.id, document_path=filename).first()
+        or Encounter.query.filter_by(patient_id=patient.id, document_path=filename).first()
+    )
+    if not owned:
+        from flask import abort
+        abort(404)
+    return send_from_directory(
+        current_app.config['UPLOAD_FOLDER'], filename,
+        as_attachment=request.args.get('download') == '1',
+    )
+
+
 @patient_bp.route('/records/encounter/<encounter_id>')
 @patient_required
 def encounter_detail(encounter_id):

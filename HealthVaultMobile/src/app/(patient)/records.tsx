@@ -165,7 +165,7 @@ export default function RecordsScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={active.isFetching} onRefresh={active.refetch} tintColor={Colors.teal} />}>
+      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={active.isFetching} onRefresh={() => { void active.refetch(); }} tintColor={Colors.teal} />}>
         {renderContent()}
       </ScrollView>
     </SafeAreaView>

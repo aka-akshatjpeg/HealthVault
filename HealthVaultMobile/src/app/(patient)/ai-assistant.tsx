@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, type TextStyle } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, type ScrollViewInstance } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/services/api';
 import { Colors } from '@/constants';
-import Markdown from 'react-native-markdown-display';
+import Markdown, { type MarkdownStyleMap } from '@ronradtke/react-native-markdown-display';
 import { HealthVaultAILogo } from '@/components/AILogo';
 
 export default function AIAssistantScreen() {
@@ -12,10 +12,10 @@ export default function AIAssistantScreen() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ScrollViewInstance>(null);
 
   useEffect(() => {
-    api.post('/api/v1/ai/clear-history').catch(() => { });
+    api.post('/ai/clear-history').catch(() => { });
   }, []);
 
   const sendMessage = async (text: string) => {
@@ -26,7 +26,7 @@ export default function AIAssistantScreen() {
     setLoading(true);
 
     try {
-      const response = await api.post('/api/v1/ai/chat', { message: userMsg });
+      const response = await api.post('/ai/chat', { message: userMsg });
       if (response.data?.response) {
         setMessages(prev => [...prev, { role: 'ai', text: response.data.response }]);
       } else if (response.data?.error) {
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
 });
 
-const markdownStyles: Record<string, TextStyle> = {
+const markdownStyles: MarkdownStyleMap = {
   body: { fontSize: 15, lineHeight: 22, color: Colors.text },
   strong: { fontWeight: '700', color: Colors.primary },
   em: { fontStyle: 'italic' },

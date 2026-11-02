@@ -47,6 +47,10 @@ backend/test_ai*.py
 HealthVaultMobile/AGENTS.md
 HealthVaultMobile/LICENSE
 
+# Firebase native client configuration (add locally; keep out of source control)
+HealthVaultMobile/google-services.json
+HealthVaultMobile/GoogleService-Info.plist
+
 # OS/editor files
 .DS_Store
 Thumbs.db

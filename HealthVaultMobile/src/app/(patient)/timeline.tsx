@@ -50,7 +50,7 @@ export default function TimelineScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={Colors.teal} />}>
+      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => { void refetch(); }} tintColor={Colors.teal} />}>
         {items.length === 0 ? <Text style={styles.empty}>No events found.</Text> : items.map((item: any, index: number) => {
           const isLast = index === items.length - 1;
           const color = typeColors[item.type] || Colors.textMuted;

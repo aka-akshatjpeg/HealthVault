@@ -21,8 +21,7 @@ def _get_patient():
         
     if identity.get('role') != 'patient':
         return None, (jsonify({'error': 'Patient account required.'}), 403)
-    user = User.query.get(identity['user_id'])
-    print(f'User: {user}, Patient: {user.patient if user else None}')
+    user = db.session.get(User, identity['user_id'])
     if not user or not user.patient:
         return None, (jsonify({'error': 'Patient profile not found.'}), 404)
     return user.patient, None
@@ -194,7 +193,10 @@ def lab_report_detail(report_id):
             'ordering_doctor': report.ordering_doctor, 'status': report.status,
             'summary': report.summary, 'source': report.source,
             'source_organization': report.source_organization,
-            'document_url': f'/documents/view/{report.id}' if report.document_path else None,
+            'document_url': (
+                f'/api/v1/patient/records/lab/{report.id}/download'
+                if report.document_path else None
+            ),
         },
         'observations': [{
             'id': o.id, 'test_name': o.test_name, 'value': o.value,
@@ -202,6 +204,21 @@ def lab_report_detail(report_id):
             'is_abnormal': o.is_abnormal, 'interpretation': o.interpretation
         } for o in report.observations]
     })
+
+
+@patient_v1_bp.route('/records/lab/<report_id>/download', methods=['GET'])
+@jwt_required()
+def download_lab_report(report_id):
+    patient, err = _get_patient()
+    if err:
+        return err
+    report = DiagnosticReport.query.filter_by(id=report_id, patient_id=patient.id).first()
+    if not report or not report.document_path:
+        return jsonify({'error': 'Report document not found.'}), 404
+    return send_from_directory(
+        current_app.config['UPLOAD_FOLDER'], report.document_path,
+        as_attachment=True,
+    )
 
 
 # ── Medications ───────────────────────────────────────────────────────────────
@@ -362,7 +379,7 @@ def get_settings():
     return jsonify({
         'patient': {
             'id': patient.id, 'full_name': patient.full_name,
-            'email': patient.user.email,
+            'email': patient.user.public_email,
             'date_of_birth': str(patient.date_of_birth) if patient.date_of_birth else None,
             'biological_sex': patient.biological_sex, 'blood_group': patient.blood_group,
             'phone': patient.phone, 'address': patient.address,

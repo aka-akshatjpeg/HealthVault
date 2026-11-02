@@ -1,10 +1,14 @@
 # routes/api_v1/auth.py — JWT Authentication API
-from flask import Blueprint, request, jsonify, session
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
-from datetime import datetime, timedelta
-from models import db, User, Patient, Provider, Organization, HealthIdentity, EmergencyProfile, OTPCode
-import utils, random, string, json
+from datetime import datetime
+from models import db, User, Patient, Provider, Organization, HealthIdentity, EmergencyProfile
+from firebase_auth import (
+    FirebaseAccountConflict, FirebaseAccountInactive, FirebaseAuthUnavailable,
+    FirebaseLinkRejected, FirebaseProfileRequired, FirebaseTokenInvalid, authenticate_firebase_user,
+    link_firebase_phone_account, record_firebase_login, verify_firebase_token,
+)
+import utils, json
 
 def _make_identity(user_id, role):
     """Encode identity as JSON string (flask-jwt-extended v4 requires string subject)."""
@@ -20,90 +24,113 @@ def _parse_identity(raw):
 auth_v1_bp = Blueprint('auth_v1', __name__)
 
 
-def _generate_otp():
-    return ''.join(random.choices(string.digits, k=6))
-
-
-def _create_otp(user_id):
-    OTPCode.query.filter_by(user_id=user_id, used=False).update({'used': True})
-    otp = OTPCode(
-        user_id=user_id,
-        code=_generate_otp(),
-        expires_at=datetime.utcnow() + timedelta(minutes=10)
-    )
-    db.session.add(otp)
-    db.session.commit()
-    return otp
-
-
-# POST /api/v1/auth/login
-# Body: { email, password }
-# Returns: { otp_pending: true, otp_code: '123456' (demo only) }
+# ---------------------------------------------------------------------------
+# REMOVED — demo email/password login
+# POST /api/v1/auth/login → 410 Gone
+# The mobile app must not use password auth. Use /firebase-login instead.
+# ---------------------------------------------------------------------------
 @auth_v1_bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json() or {}
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
-    if not email or not password:
-        return jsonify({'error': 'Email and password are required.'}), 400
-    user = User.query.filter_by(email=email).first()
-    if not user or not check_password_hash(user.password_hash, password):
-        return jsonify({'error': 'Invalid email or password.'}), 401
-    if not user.is_active:
-        return jsonify({'error': 'Account deactivated. Contact support.'}), 403
-    otp = _create_otp(user.id)
-    # Store user_id in a short-lived way — we use the OTP record itself as the state
     return jsonify({
-        'otp_pending': True,
-        'user_id': user.id,  # client holds this to pass back with OTP
-        'otp_code': otp.code,  # DEMO ONLY: in production, send via email/SMS
-        'message': f'OTP sent. Demo OTP: {otp.code}',
-        'role': user.role
-    })
+        'error': 'This endpoint has been removed. '
+                 'Use POST /api/v1/auth/firebase-login with a Firebase ID token.'
+    }), 410
 
 
-# POST /api/v1/auth/verify-otp
-# Body: { user_id, otp }
-# Returns: { access_token, refresh_token, role, user: { id, email, role } }
+# ---------------------------------------------------------------------------
+# REMOVED — demo OTP verification
+# POST /api/v1/auth/verify-otp → 410 Gone
+# OTP is now handled entirely by Firebase on the mobile client.
+# ---------------------------------------------------------------------------
 @auth_v1_bp.route('/verify-otp', methods=['POST'])
 def verify_otp():
-    data = request.get_json() or {}
-    user_id = data.get('user_id', '')
-    entered = str(data.get('otp', '')).strip()
-    if not user_id or not entered:
-        return jsonify({'error': 'user_id and otp are required.'}), 400
-    otp = OTPCode.query.filter_by(user_id=user_id, used=False).order_by(OTPCode.created_at.desc()).first()
-    if not otp:
-        return jsonify({'error': 'No OTP found. Please log in again.'}), 400
-    if not otp.is_valid():
-        return jsonify({'error': 'OTP expired. Please log in again.'}), 400
-    if otp.code != entered:
-        return jsonify({'error': 'Incorrect OTP.'}), 400
-    otp.used = True
-    user = User.query.get(user_id)
-    user.last_login = datetime.utcnow()
-    db.session.commit()
-    if user.role == 'patient' and user.patient:
-        utils.log_audit_event(
-            patient_id=user.patient.id, actor_id=user.id,
-            actor_name=user.patient.full_name, action='login',
-            resource_type='account', resource_description='Mobile app login via OTP', status='success'
-        )
+    return jsonify({
+        'error': 'This endpoint has been removed. '
+                 'Use POST /api/v1/auth/firebase-login with a Firebase ID token.'
+    }), 410
+
+
+# POST /api/v1/auth/firebase-login
+# Body: { id_token: <Firebase ID token>, full_name?: string }
+# Returns: { access_token, refresh_token, role, user }
+@auth_v1_bp.route('/firebase-login', methods=['POST'])
+def firebase_login():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'A JSON object is required.'}), 400
+    id_token = data.get('id_token')
+    if not isinstance(id_token, str) or not id_token.strip():
+        return jsonify({'error': 'A Firebase ID token is required.'}), 400
+    profile = {'full_name': data.get('full_name', '')}
+    try:
+        claims = verify_firebase_token(id_token.strip())
+        user = authenticate_firebase_user(claims, profile)
+        record_firebase_login(user, 'mobile', request.remote_addr or '')
+    except FirebaseAuthUnavailable:
+        return jsonify({'error': 'Firebase authentication is not configured on the server.'}), 503
+    except FirebaseTokenInvalid:
+        return jsonify({'error': 'The Firebase sign-in token is invalid or expired.'}), 401
+    except FirebaseProfileRequired as exc:
+        return jsonify({'error': 'profile_required', 'required_fields': exc.fields}), 422
+    except FirebaseAccountConflict as exc:
+        return jsonify({'error': str(exc)}), 409
+    except FirebaseAccountInactive:
+        return jsonify({'error': 'This HealthVault account is deactivated.'}), 403
     identity = _make_identity(user.id, user.role)
-    access_token = create_access_token(identity=identity)
-    refresh_token = create_refresh_token(identity=identity)
-    user_data = {'id': user.id, 'email': user.email, 'role': user.role}
+    user_data = {'id': user.id, 'email': user.public_email, 'role': user.role}
     if user.role == 'patient' and user.patient:
-        p = user.patient
-        user_data['full_name'] = p.full_name
-        user_data['hv_id'] = p.health_identity.hv_id if p.health_identity else None
+        user_data['full_name'] = user.patient.full_name
+        user_data['hv_id'] = user.patient.health_identity.hv_id if user.patient.health_identity else None
     elif user.role in ('doctor', 'lab') and user.provider:
         user_data['full_name'] = user.provider.full_name
     return jsonify({
-        'access_token': access_token,
-        'refresh_token': refresh_token,
+        'access_token': create_access_token(identity=identity),
+        'refresh_token': create_refresh_token(identity=identity),
         'role': user.role,
-        'user': user_data
+        'user': user_data,
+    })
+
+
+# POST /api/v1/auth/firebase-link
+# Existing users prove their current password and complete Firebase phone
+# verification. The account's existing HealthVault role is preserved.
+@auth_v1_bp.route('/firebase-link', methods=['POST'])
+def firebase_link():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'A JSON object is required.'}), 400
+    id_token = data.get('id_token')
+    email = data.get('email')
+    password = data.get('password')
+    if not all(isinstance(value, str) and value.strip() for value in (id_token, email, password)):
+        return jsonify({'error': 'Firebase token, account email, and current password are required.'}), 400
+    try:
+        claims = verify_firebase_token(id_token.strip())
+        user = link_firebase_phone_account(claims, email, password)
+        record_firebase_login(user, 'mobile account-link', request.remote_addr or '')
+    except FirebaseAuthUnavailable:
+        return jsonify({'error': 'Firebase authentication is not configured on the server.'}), 503
+    except FirebaseTokenInvalid:
+        return jsonify({'error': 'The Firebase phone verification is invalid or expired.'}), 401
+    except FirebaseLinkRejected:
+        return jsonify({'error': 'The account credentials could not be confirmed.'}), 401
+    except FirebaseAccountConflict as exc:
+        return jsonify({'error': str(exc)}), 409
+    except FirebaseAccountInactive:
+        return jsonify({'error': 'This HealthVault account is deactivated.'}), 403
+
+    identity = _make_identity(user.id, user.role)
+    user_data = {'id': user.id, 'email': user.public_email, 'role': user.role}
+    if user.role == 'patient' and user.patient:
+        user_data['full_name'] = user.patient.full_name
+        user_data['hv_id'] = user.patient.health_identity.hv_id if user.patient.health_identity else None
+    elif user.role in ('doctor', 'lab') and user.provider:
+        user_data['full_name'] = user.provider.full_name
+    return jsonify({
+        'access_token': create_access_token(identity=identity),
+        'refresh_token': create_refresh_token(identity=identity),
+        'role': user.role,
+        'user': user_data,
     })
 
 
@@ -117,98 +144,24 @@ def refresh():
     return jsonify({'access_token': access_token})
 
 
-# POST /api/v1/auth/register
-# Body: { role, email, password, confirm_password, full_name, date_of_birth?, biological_sex?, blood_group?, phone?, ... }
+# ---------------------------------------------------------------------------
+# CLOSED — unauthenticated account creation via the mobile API is disabled.
+#
+# New PATIENT accounts are created automatically by /firebase-login when a
+# Firebase-verified phone/Google/Apple credential is presented for the first
+# time.  No unauthenticated caller should be able to choose a role or receive
+# a token through this route.
+#
+# PROVIDER (doctor/lab) accounts must be provisioned by an authenticated admin
+# through the web portal — not through the mobile API.
+# ---------------------------------------------------------------------------
 @auth_v1_bp.route('/register', methods=['POST'])
 def register():
-    data = request.get_json() or {}
-    role = data.get('role', 'patient')
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
-    confirm = data.get('confirm_password', '')
-    fullname = data.get('full_name', '').strip()
-    if not fullname:
-        return jsonify({'error': 'Full name is required.'}), 400
-    if not email or '@' not in email:
-        return jsonify({'error': 'A valid email is required.'}), 400
-    if len(password) < 8:
-        return jsonify({'error': 'Password must be at least 8 characters.'}), 400
-    if password != confirm:
-        return jsonify({'error': 'Passwords do not match.'}), 400
-    if User.query.filter_by(email=email).first():
-        return jsonify({'error': 'This email is already registered.'}), 409
-    pw_hash = generate_password_hash(password)
-    new_user = User(email=email, password_hash=pw_hash, role=role)
-    db.session.add(new_user)
-    db.session.flush()
-    hv_id = None
-    if role == 'patient':
-        dob = None
-        dob_str = data.get('date_of_birth', '')
-        if dob_str:
-            try:
-                from datetime import date
-                dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
-            except ValueError:
-                pass
-        patient = Patient(
-            user_id=new_user.id, full_name=fullname,
-            date_of_birth=dob,
-            biological_sex=data.get('biological_sex', ''),
-            blood_group=data.get('blood_group', ''),
-            phone=data.get('phone', '').strip()
-        )
-        db.session.add(patient)
-        db.session.flush()
-        hv_id = utils.generate_hv_id()
-        db.session.add(HealthIdentity(patient_id=patient.id, hv_id=hv_id))
-        db.session.add(EmergencyProfile(patient_id=patient.id))
-        db.session.commit()
-        utils.generate_qr_code(hv_id, patient.id)
-    elif role == 'doctor':
-        org_name = data.get('organization', '').strip()
-        org = None
-        if org_name:
-            org = Organization.query.filter_by(name=org_name).first()
-            if not org:
-                org = Organization(name=org_name, type='hospital')
-                db.session.add(org)
-                db.session.flush()
-        provider = Provider(
-            user_id=new_user.id, full_name=fullname,
-            specialty=data.get('specialty', '').strip(),
-            registration_number=data.get('registration_number', '').strip(),
-            phone=data.get('phone', '').strip(),
-            organization_id=org.id if org else None
-        )
-        db.session.add(provider)
-        db.session.commit()
-    elif role == 'lab':
-        lab_name = data.get('lab_name', '').strip() or fullname
-        org = Organization.query.filter_by(name=lab_name, type='lab').first()
-        if not org:
-            org = Organization(name=lab_name, type='lab',
-                               address=data.get('address', '').strip(),
-                               phone=data.get('phone', '').strip(),
-                               email=email)
-            db.session.add(org)
-            db.session.flush()
-        provider = Provider(user_id=new_user.id, full_name=fullname,
-                            phone=data.get('phone', '').strip(),
-                            organization_id=org.id)
-        db.session.add(provider)
-        db.session.commit()
-    # Issue tokens immediately after registration
-    identity = _make_identity(new_user.id, role)
-    access_token = create_access_token(identity=identity)
-    refresh_token = create_refresh_token(identity=identity)
     return jsonify({
-        'access_token': access_token,
-        'refresh_token': refresh_token,
-        'role': role,
-        'hv_id': hv_id,
-        'message': f'Account created! Your HealthVault ID is {hv_id}.' if hv_id else 'Account created.'
-    }), 201
+        'error': 'Self-registration via this endpoint is closed. '
+                 'Patients: sign in with Firebase (phone, Google, or Apple). '
+                 'Providers: contact your HealthVault administrator.'
+    }), 410
 
 
 # GET /api/v1/auth/me
@@ -217,10 +170,10 @@ def register():
 def me():
     raw_identity = get_jwt_identity()
     identity = _parse_identity(raw_identity)
-    user = User.query.get(identity['user_id'])
+    user = db.session.get(User, identity['user_id'])
     if not user:
         return jsonify({'error': 'User not found.'}), 404
-    user_data = {'id': user.id, 'email': user.email, 'role': user.role}
+    user_data = {'id': user.id, 'email': user.public_email, 'role': user.role}
     if user.role == 'patient' and user.patient:
         p = user.patient
         user_data['full_name'] = p.full_name

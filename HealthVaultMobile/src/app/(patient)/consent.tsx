@@ -46,7 +46,7 @@ export default function ConsentScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={Colors.teal} />}>
+      <ScrollView contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => { void refetch(); }} tintColor={Colors.teal} />}>
         
         {/* Pending Requests */}
         <Text style={styles.sectionHeader}>Pending Requests</Text>

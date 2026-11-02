@@ -157,7 +157,7 @@
                             <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 text-danger"></i>
                             <div>
                                 <strong>Aadhaar not yet linked.</strong><br>
-                                <small>Click "Edit Profile" and complete the Aadhaar verification step to enable cross-hospital record lookup.</small>
+                                <small>Aadhaar verification is not yet available. It will be enabled when real UIDAI integration is configured.</small>
                             </div>
                         </div>
                     </div>
@@ -291,42 +291,25 @@
                 </div>
             </div>
 
-            <!-- Aadhaar Edit -->
+            <!-- Aadhaar Verification — unavailable notice -->
             <div class="hv-card border-primary">
                 <div class="hv-card-header">
                     <h2 class="hv-card-title"><i class="bi bi-fingerprint text-teal me-2"></i> Aadhaar Verification</h2>
-                    <p class="text-muted" style="margin-bottom: 0;">{% if patient.aadhaar_verified %}Your Aadhaar is linked as <strong>XXXX-XXXX-{{ patient.aadhaar_number[-4:] }}</strong>. Re-verify below to update it.{% else %}Link your 12-digit Aadhaar to enable cross-hospital patient lookup.{% endif %}</p>
                 </div>
                 <div class="hv-card-body">
-                    <div class="row g-2" id="settingsAadhaarRow">
-                        <div class="col-8">
-                            <input type="text" id="settingsAadhaarInput" maxlength="14" class="form-control" placeholder="Enter 12-digit Aadhaar" oninput="fmtAadhaarSettings(this)">
-                            <div class="form-text" id="settingsAadhaarStatus"></div>
-                        </div>
-                        <div class="col-4">
-                            <button type="button" class="btn btn-primary w-100" onclick="sendSettingsOTP()" id="settingsSendOtpBtn">Send OTP</button>
-                        </div>
-                    </div>
-                    <div id="settingsOtpRow" style="display:none;margin-top:10px;">
-                        <div class="row g-2">
-                            <div class="col-8">
-                                <input type="text" id="settingsOtpInput" maxlength="6" class="form-control" placeholder="Enter OTP" style="letter-spacing:4px;font-size:1.1rem;text-align:center;">
-                                <div class="form-text text-info" id="settingsOtpHint"></div>
-                            </div>
-                            <div class="col-4">
-                                <button type="button" class="btn btn-success w-100" onclick="verifySettingsOTP()" id="settingsVerifyBtn">Verify & Link</button>
-                            </div>
+                    <div class="alert mb-0 d-flex gap-3 align-items-start" style="background:var(--hv-amber-light);border:1px solid var(--hv-amber);color:var(--hv-text-1);">
+                        <i class="bi bi-info-circle-fill fs-5 mt-1" style="color:var(--hv-amber);flex-shrink:0;"></i>
+                        <div>
+                            <strong>Aadhaar OTP verification is not yet available.</strong><br>
+                            <small>Real UIDAI integration requires a government-issued AUA/KUA licence and will be enabled by the administrator when ready.</small>
+                            {% if patient.aadhaar_verified and patient.aadhaar_number %}
+                            <div class="mt-2 fw-bold" style="letter-spacing:2px;">Currently linked: XXXX-XXXX-{{ patient.aadhaar_number[-4:] }}</div>
+                            {% endif %}
                         </div>
                     </div>
-                    <div id="settingsVerifiedBadge" style="display:none;margin-top:10px;">
-                        <div class="alert alert-success py-2 px-3 mb-0 d-flex align-items-center gap-2">
-                            <i class="bi bi-patch-check-fill"></i><strong>Aadhaar linked and verified!</strong>
-                            <span class="ms-auto text-muted small" id="settingsAadhaarMasked"></span>
-                        </div>
-                    </div>
-                    <div class="form-text mt-2" style="font-size:.7rem;color:var(--hv-text-3);">⚠️ Demo simulation — Real UIDAI API requires a government-issued AUA licence.</div>
                 </div>
             </div>
+
 
             <div class="d-flex justify-content-end gap-3 mb-5">
                 <button type="button" class="btn btn-ghost px-4 fw-bold" onclick="toggleEditMode(false)">
@@ -347,64 +330,6 @@ function toggleEditMode(showEdit) {
     document.getElementById('editMode').style.display = showEdit ? 'block' : 'none';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// ── Aadhaar helpers (settings page) ──────────────────────────────────────────
-function fmtAadhaarSettings(input) {
-    let digits = input.value.replace(/\D/g, '').substring(0, 12);
-    let parts = [];
-    for (let i = 0; i < digits.length; i += 4) parts.push(digits.substring(i, i + 4));
-    input.value = parts.join('-');
-    input.dataset.digits = digits;
-}
-
-function rawSettingsAadhaar() {
-    const el = document.getElementById('settingsAadhaarInput');
-    return (el.dataset.digits || el.value.replace(/\D/g, ''));
-}
-
-function sendSettingsOTP() {
-    const aadhaar = rawSettingsAadhaar();
-    if (aadhaar.length !== 12) {
-        document.getElementById('settingsAadhaarStatus').innerHTML = '<span class="text-danger">Please enter a valid 12-digit Aadhaar number.</span>';
-        return;
-    }
-    const btn = document.getElementById('settingsSendOtpBtn');
-    btn.disabled = true; btn.textContent = 'Sending…';
-    fetch('/api/aadhaar/send-otp', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({aadhaar_number: aadhaar})
-    }).then(r => r.json()).then(data => {
-        btn.disabled = false; btn.textContent = 'Resend OTP';
-        if (data.success) {
-            document.getElementById('settingsOtpRow').style.display = 'block';
-            document.getElementById('settingsAadhaarStatus').innerHTML = '<span class="text-success">OTP sent!</span>';
-            document.getElementById('settingsOtpHint').textContent = '🛈 Demo OTP: ' + data.otp;
-        } else {
-            document.getElementById('settingsAadhaarStatus').innerHTML = '<span class="text-danger">' + data.error + '</span>';
-        }
-    }).catch(() => { btn.disabled = false; btn.textContent = 'Send OTP'; });
-}
-
-function verifySettingsOTP() {
-    const aadhaar = rawSettingsAadhaar();
-    const otp = document.getElementById('settingsOtpInput').value.trim();
-    const btn = document.getElementById('settingsVerifyBtn');
-    btn.disabled = true; btn.textContent = 'Verifying…';
-    fetch('/api/aadhaar/verify-and-save', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({aadhaar_number: aadhaar, otp: otp})
-    }).then(r => r.json()).then(data => {
-        btn.disabled = false;
-        if (data.success) {
-            document.getElementById('settingsOtpRow').style.display = 'none';
-            document.getElementById('settingsAadhaarRow').style.display = 'none';
-            document.getElementById('settingsVerifiedBadge').style.display = 'block';
-            document.getElementById('settingsAadhaarMasked').textContent = data.masked;
-        } else {
-            btn.textContent = 'Verify & Link';
-            document.getElementById('settingsOtpHint').innerHTML = '<span class="text-danger">' + data.error + '</span>';
-        }
-    }).catch(() => { btn.disabled = false; btn.textContent = 'Verify & Link'; });
-}
+// Aadhaar OTP helpers removed — Aadhaar verification is not yet available.
 </script>
 {% endblock %}

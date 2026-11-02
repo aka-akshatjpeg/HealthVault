@@ -26,7 +26,7 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 120 }]}
-        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor={Colors.teal} />}
+        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => { void refetch(); }} tintColor={Colors.teal} />}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}

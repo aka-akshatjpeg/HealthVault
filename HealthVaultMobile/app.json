@@ -14,9 +14,11 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.healthvault.mobile"
+      "bundleIdentifier": "com.healthvault.mobile",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/healthvault-logo-transparent.png"
@@ -39,7 +41,11 @@
         }
       ],
       "expo-web-browser",
-      "expo-sharing"
+      "expo-sharing",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-google-signin/google-signin",
+      "expo-apple-sign-in"
     ],
     "experiments": {
       "typedRoutes": true

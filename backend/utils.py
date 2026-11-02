@@ -12,7 +12,12 @@ import random
 import string
 import qrcode
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def utcnow():
+    """Return a naive UTC datetime for existing database timestamp columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def generate_hv_id():
@@ -125,7 +130,7 @@ def log_audit_event(patient_id, actor_id, actor_name, action, resource_type,
         purpose=purpose,
         status=status,
         ip_address=ip_address,
-        timestamp=datetime.utcnow()
+        timestamp=utcnow()
     )
     db.session.add(event)
     db.session.commit()

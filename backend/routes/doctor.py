@@ -31,7 +31,7 @@ def dashboard():
     active_requests = AccessRequest.query.filter_by(
         provider_id=provider.id,
         status='approved'
-    ).filter(AccessRequest.expires_at > datetime.utcnow()).order_by(AccessRequest.requested_at.desc()).all()
+    ).filter(AccessRequest.expires_at > utils.utcnow()).order_by(AccessRequest.requested_at.desc()).all()
     
     # Recent Consultations (History of what prescriptions/notes were given)
     recent_consultations = Encounter.query.filter_by(
@@ -41,7 +41,7 @@ def dashboard():
     
     # Stats
     total_patients_seen = db.session.query(Encounter.patient_id).filter_by(provider_id=provider.id).distinct().count()
-    today_date = datetime.utcnow().date()
+    today_date = utils.utcnow().date()
     consultations_today = Encounter.query.filter(
         Encounter.provider_id == provider.id,
         db.func.date(Encounter.created_at) == today_date
@@ -98,7 +98,7 @@ def patient_search():
             provider_id=current_user.provider.id,
             patient_id=patient.id,
             status='approved'
-        ).filter(AccessRequest.expires_at > datetime.utcnow()).first()
+        ).filter(AccessRequest.expires_at > utils.utcnow()).first()
 
         pending_request = AccessRequest.query.filter_by(
             provider_id=current_user.provider.id,

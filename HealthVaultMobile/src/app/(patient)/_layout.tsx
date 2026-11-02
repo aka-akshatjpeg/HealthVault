@@ -39,14 +39,14 @@ export default function PatientLayout() {
         options={{
           headerShown: false,
           title: 'Home',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "home" : "home-outline"} size={size} color={typeof color === 'string' ? color : Colors.primary} />
         }}
       />
       <Tabs.Screen
         name="records"
         options={{ 
           title: 'Records', 
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "document-text" : "document-text-outline"} size={size} color={color} /> 
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "document-text" : "document-text-outline"} size={size} color={typeof color === 'string' ? color : Colors.primary} />
         }}
       />
       <Tabs.Screen
@@ -54,14 +54,14 @@ export default function PatientLayout() {
         options={{ 
           title: 'My ID', 
           headerTitle: 'Health ID',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "qr-code" : "qr-code-outline"} size={size} color={color} /> 
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "qr-code" : "qr-code-outline"} size={size} color={typeof color === 'string' ? color : Colors.primary} />
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{ 
           title: 'Alerts', 
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "notifications" : "notifications-outline"} size={size} color={color} /> 
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "notifications" : "notifications-outline"} size={size} color={typeof color === 'string' ? color : Colors.primary} />
         }}
       />
       <Tabs.Screen
@@ -69,7 +69,7 @@ export default function PatientLayout() {
         options={{ 
           title: 'Profile', 
           headerTitle: 'Profile & Settings',
-          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} /> 
+          tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? "person" : "person-outline"} size={size} color={typeof color === 'string' ? color : Colors.primary} />
         }}
       />
       <Tabs.Screen

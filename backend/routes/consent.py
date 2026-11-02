@@ -64,9 +64,9 @@ def approve(request_id):
         return redirect(url_for('consent.review', request_id=request_id))
 
     access_request.status = 'approved'
-    access_request.responded_at = datetime.utcnow()
+    access_request.responded_at = utils.utcnow()
     access_request.approved_categories = ','.join(approved_cats)
-    access_request.expires_at = datetime.utcnow() + timedelta(hours=access_request.duration_hours)
+    access_request.expires_at = utils.utcnow() + timedelta(hours=access_request.duration_hours)
 
     cats_str = ', '.join(approved_cats)
     utils.log_audit_event(
@@ -91,7 +91,7 @@ def deny(request_id):
     ).first_or_404()
 
     access_request.status = 'denied'
-    access_request.responded_at = datetime.utcnow()
+    access_request.responded_at = utils.utcnow()
 
     utils.log_audit_event(
         patient_id=patient.id, actor_id=current_user.id,

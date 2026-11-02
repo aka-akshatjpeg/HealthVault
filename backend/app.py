@@ -17,11 +17,14 @@
 from flask import Flask, redirect, url_for
 from flask_login import LoginManager
 from dotenv import load_dotenv
+from sqlalchemy import inspect, text
 from models import db, User
+from utils import utcnow
 import os
+import secrets
 
-# Load settings from the .env file (like SECRET_KEY, database path)
-load_dotenv()
+# Load this backend's settings regardless of the directory used to launch it.
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 
 def create_app():
@@ -38,13 +41,18 @@ def create_app():
     # CONFIGURATION
     # These settings control how Flask behaves
     # ==========================================================================
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'healthvault-dev-secret-change-in-production')
+    # A random fallback keeps first-run local use safe; deployments should set a
+    # persistent SECRET_KEY so sessions survive restarts.
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') or secrets.token_hex(32)
     # This is where the SQLite database file will be saved
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///healthvault.db'
+    # Keep SQLite as the zero-configuration default, while allowing tests and
+    # deployments to point at an explicit database without editing source code.
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///healthvault.db')
     # Turn off a feature we don't need (saves memory)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     # Where uploaded files are stored
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
+    app.config['PUBLIC_BASE_URL'] = os.getenv('PUBLIC_BASE_URL', 'http://localhost:5000').rstrip('/')
     # Maximum file size: 16 megabytes
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
@@ -52,6 +60,14 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', app.config['SECRET_KEY'])
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600       # 1 hour
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 2592000   # 30 days
+    app.config['DEMO_MODE'] = os.getenv('DEMO_MODE', '').strip().lower() in {'1', 'true', 'yes'}
+    app.config['FIREBASE_PROJECT_ID'] = os.getenv('FIREBASE_PROJECT_ID', '').strip()
+    app.config['FIREBASE_WEB_CONFIG'] = {
+        'apiKey': os.getenv('FIREBASE_WEB_API_KEY', '').strip(),
+        'authDomain': os.getenv('FIREBASE_WEB_AUTH_DOMAIN', '').strip(),
+        'projectId': os.getenv('FIREBASE_PROJECT_ID', '').strip(),
+        'appId': os.getenv('FIREBASE_WEB_APP_ID', '').strip(),
+    }
 
     # Make sure uploads folder exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -94,6 +110,10 @@ def create_app():
     # Each routes/*.py file is a "Blueprint" — a group of related URLs
     # We import them here and attach them to the app
     # ==========================================================================
+    @app.context_processor
+    def inject_firebase_web_settings():
+        return {'firebase_web_config': app.config['FIREBASE_WEB_CONFIG']}
+
     from routes.auth import auth_bp
     from routes.patient import patient_bp
     from routes.doctor import doctor_bp
@@ -144,6 +164,20 @@ def create_app():
     # ==========================================================================
     @app.route('/uploads/<filename>')
     def uploaded_file(filename):
+        # This legacy URL is used for public QR cards and organization portraits.
+        # Never let it bypass the authenticated document/report download routes.
+        from flask import abort
+        from models import Document, DiagnosticReport, Procedure, Immunization, ImagingStudy, Encounter
+        private_references = (
+            Document.query.filter_by(file_path=filename).first(),
+            DiagnosticReport.query.filter_by(document_path=filename).first(),
+            Procedure.query.filter_by(document_path=filename).first(),
+            Immunization.query.filter_by(document_path=filename).first(),
+            ImagingStudy.query.filter_by(document_path=filename).first(),
+            Encounter.query.filter_by(document_path=filename).first(),
+        )
+        if any(private_references):
+            abort(404)
         from flask import send_from_directory
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
@@ -164,7 +198,7 @@ def create_app():
             ).count()
         return {
             'unread_count': unread_count,
-            'now': datetime.utcnow(),
+            'now': utcnow(),
             'today': date.today().isoformat()
         }
 
@@ -186,8 +220,63 @@ def create_app():
     # ==========================================================================
     with app.app_context():
         db.create_all()
+        _add_missing_profile_columns()
 
     return app
+
+
+def _add_missing_profile_columns():
+    """Apply safe, additive compatibility changes to existing SQL databases."""
+    additions = {
+        'users': {'firebase_uid': 'VARCHAR(128)'},
+        'organizations': {
+            'pincode': 'VARCHAR(20)',
+            'website': 'VARCHAR(255)',
+            'opening_hours': 'VARCHAR(100)',
+            'closing_hours': 'VARCHAR(100)',
+            'working_days': 'VARCHAR(100)',
+            'emergency_hours': 'VARCHAR(100)',
+            'services_offered': 'TEXT',
+            'tests_available': 'TEXT',
+        },
+        'providers': {
+            'profile_photo': 'VARCHAR(255)',
+            'gender': 'VARCHAR(30)',
+            'qualifications': 'TEXT',
+            'experience_years': 'INTEGER',
+            'consultation_fee': 'INTEGER',
+            'consultation_type': 'VARCHAR(50)',
+            'working_days': 'VARCHAR(100)',
+            'working_hours': 'VARCHAR(200)',
+            'slot_duration': 'INTEGER',
+            'services': 'TEXT',
+            'bio': 'TEXT',
+            'languages': 'VARCHAR(255)',
+        },
+    }
+    engine = db.engine
+    inspector = inspect(engine)
+    quote = engine.dialect.identifier_preparer.quote
+    with engine.begin() as connection:
+        for table, columns in additions.items():
+            if not inspector.has_table(table):
+                continue
+            existing = {column['name'] for column in inspector.get_columns(table)}
+            for name, sql_type in columns.items():
+                if name not in existing:
+                    connection.execute(text(
+                        f'ALTER TABLE {quote(table)} ADD COLUMN {quote(name)} {sql_type}'
+                    ))
+    if inspector.has_table('users'):
+        current_indexes = {
+            index['name'] for index in inspect(engine).get_indexes('users')
+        }
+        if 'ix_users_firebase_uid' not in current_indexes:
+            with engine.begin() as connection:
+                connection.execute(text(
+                    f'CREATE UNIQUE INDEX {quote("ix_users_firebase_uid")} '
+                    f'ON {quote("users")} ({quote("firebase_uid")})'
+                ))
 
 
 # =============================================================================
@@ -203,4 +292,7 @@ if __name__ == '__main__':
     print("="*60 + "\n")
     # debug=True means the server auto-restarts when you change code
     # NEVER use debug=True in production
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    debug = os.getenv('FLASK_DEBUG', '').strip().lower() in {'1', 'true', 'yes'}
+    host = os.getenv('FLASK_HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', '5000'))
+    app.run(debug=debug, host=host, port=port)
