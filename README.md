@@ -1,6 +1,6 @@
 # HealthVault
 
-HealthVault is a patient-centered health records application with a Flask web backend and an Expo/React Native mobile app. It is intended to help patients organize health information and share selected records with healthcare providers.
+HealthVault is a patient-centered health records project with a Flask web backend and an Expo/React Native mobile app.
 
 ## Project layout
 
@@ -9,29 +9,36 @@ HealthVault is a patient-centered health records application with a Flask web ba
 
 ## Backend setup
 
-```bash
+```powershell
 cd backend
-python -m venv .venv
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-Activate the environment, install dependencies, create a local `backend/.env` from your own configuration, then run:
+Edit `backend/.env` and set a private `SECRET_KEY`. Add a `GEMINI_API_KEY` only if you want to use the AI features. Start the server with:
 
-```bash
-pip install -r requirements.txt
+```powershell
 python app.py
 ```
 
-Keep secret keys and API credentials in the local environment file. Never commit real patient records or uploaded documents.
+The database tables are created automatically on startup. The local SQLite database and uploaded files stay on your machine.
 
 ## Mobile setup
 
-```bash
+```powershell
 cd HealthVaultMobile
-npm install
+Copy-Item .env.example .env.local
+npm ci
 npm start
 ```
 
-Configure service endpoints and any required credentials for your own development environment. Do not commit local environment files or production credentials.
+The example URL targets the Android emulator. For a physical phone, set `EXPO_PUBLIC_API_URL` in `.env.local` to your computer's LAN address, with port `5000`. Restart Expo after changing it.
+
+## Configuration and data
+
+Keep API keys, secret values, real patient information, local databases, and uploaded documents out of Git. The `.env.example` files contain placeholders and can be committed safely.
 
 ## License
 
