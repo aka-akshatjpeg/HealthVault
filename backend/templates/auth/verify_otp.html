@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}Verify OTP — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+  /* ── Auth page shell ── */
+  .auth-page {
+    min-height: calc(100vh - var(--hv-topbar-height, 60px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background: linear-gradient(rgba(245, 247, 248, 0.8), rgba(245, 247, 248, 0.95)), 
+                url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2000&auto=format&fit=crop') center/cover fixed;
+  }
+  
+  body.dark-mode .auth-page {
+    background: linear-gradient(rgba(11, 15, 18, 0.85), rgba(11, 15, 18, 0.98)), 
+                url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2000&auto=format&fit=crop') center/cover fixed;
+  }
+
+  /* ── Auth card ── */
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--hv-surface);
+    border: 1px solid var(--hv-border);
+    border-radius: var(--hv-radius-xl);
+    box-shadow: var(--hv-shadow-md);
+    padding: 40px;
+    text-align: center;
+  }
+
+  /* ── Icon ── */
+  .otp-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: var(--hv-teal-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    color: var(--hv-teal);
+    margin: 0 auto 22px;
+  }
+
+  /* ── Heading ── */
+  .auth-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--hv-text-1);
+    letter-spacing: -0.025em;
+    margin-bottom: 6px;
+  }
+  .auth-subtitle {
+    font-size: 0.875rem;
+    color: var(--hv-text-3);
+    line-height: 1.55;
+    margin-bottom: 28px;
+  }
+
+  /* ── Flash alerts ── */
+  .auth-alert {
+    padding: 10px 14px;
+    border-radius: var(--hv-radius);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .auth-alert.danger  { background: var(--hv-red-light);   color: var(--hv-red);   border: 1px solid var(--hv-red); }
+  .auth-alert.warning { background: var(--hv-amber-light); color: var(--hv-amber); border: 1px solid var(--hv-amber); }
+  .auth-alert.success { background: var(--hv-green-light); color: var(--hv-green); border: 1px solid var(--hv-green); }
+  .auth-alert.info    { background: var(--hv-blue-light);  color: var(--hv-blue);  border: 1px solid var(--hv-blue); }
+
+  /* ── OTP boxes ── */
+  .otp-boxes {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+  .otp-box {
+    width: 48px;
+    height: 54px;
+    border-radius: 10px;
+    border: 1px solid var(--hv-border-strong);
+    background: var(--hv-surface-2);
+    color: var(--hv-text-1);
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    caret-color: var(--hv-teal);
+  }
+  .otp-box:focus {
+    border-color: var(--hv-teal);
+    background: var(--hv-surface);
+    box-shadow: 0 0 0 3px var(--hv-teal-light);
+  }
+  #otp-hidden { display: none; }
+
+  /* ── Timer ── */
+  .otp-timer {
+    font-size: 0.82rem;
+    color: var(--hv-text-3);
+    margin-bottom: 20px;
+  }
+  #otp-timer {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--hv-text-2);
+  }
+
+  /* ── Primary button ── */
+  .btn-auth-primary {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: var(--hv-radius);
+    background: var(--hv-navy);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-auth-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-auth-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+  body.dark-mode .btn-auth-primary {
+    background: var(--hv-teal);
+    color: #0B0F12;
+  }
+  body.dark-mode .btn-auth-primary:disabled {
+    background: var(--hv-teal);
+    opacity: 0.35;
+  }
+
+  /* ── Footer links ── */
+  .auth-footer {
+    margin-top: 24px;
+  }
+  .resend-text {
+    font-size: 0.82rem;
+    color: var(--hv-text-3);
+    margin-bottom: 10px;
+  }
+  .resend-text a {
+    color: var(--hv-teal);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .resend-text a:hover { text-decoration: underline; }
+  .auth-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+    color: var(--hv-text-3);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .auth-back-link:hover { color: var(--hv-text-1); }
+</style>
+
+<div class="auth-page">
+  <div class="auth-card">
+
+    <!-- Icon -->
+    <div class="otp-icon">
+      <i class="bi bi-shield-lock"></i>
+    </div>
+
+    <!-- Heading -->
+    <h1 class="auth-title">Verify your identity</h1>
+    <p class="auth-subtitle">
+      A 6-digit code was sent to your email address.<br>
+      Enter it below to continue.
+    </p>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="auth-alert {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- OTP Form -->
+    <form method="POST" action="{{ url_for('auth.verify_otp') }}" id="otpForm">
+      <div class="otp-boxes" id="otpBoxes">
+        <input class="otp-box" type="text" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input class="otp-box" type="text" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input class="otp-box" type="text" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input class="otp-box" type="text" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input class="otp-box" type="text" maxlength="1" inputmode="numeric" autocomplete="off">
+        <input class="otp-box" type="text" maxlength="1" inputmode="numeric" autocomplete="off">
+      </div>
+      <input type="hidden" name="otp" id="otp-hidden">
+
+      <!-- Timer -->
+      <p class="otp-timer">
+        Expires in <span id="otp-timer">10:00</span>
+      </p>
+
+      <button type="submit" class="btn-auth-primary" id="verifyBtn" disabled>
+        Verify OTP
+      </button>
+    </form>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+      <p class="resend-text">
+        Didn't receive it? <a href="{{ url_for('auth.resend_otp') }}">Resend OTP</a>
+      </p>
+      <a href="{{ url_for('auth.login', role=role) }}" class="auth-back-link">
+        <i class="bi bi-arrow-left"></i> Back to login
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const boxes = Array.from(document.querySelectorAll('.otp-box'));
+const hidden = document.getElementById('otp-hidden');
+const btn    = document.getElementById('verifyBtn');
+const form   = document.getElementById('otpForm');
+
+function updateHidden() {
+  const val = boxes.map(b => b.value).join('');
+  hidden.value = val;
+  btn.disabled = val.length < 6;
+}
+
+boxes.forEach(function(box, i) {
+  box.addEventListener('input', function(e) {
+    const v = e.target.value.replace(/\D/g, '');
+    box.value = v ? v[0] : '';
+    if (v && i < 5) boxes[i + 1].focus();
+    updateHidden();
+  });
+
+  box.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+    if (e.key === 'Enter' && hidden.value.length === 6) form.submit();
+  });
+
+  box.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    text.split('').slice(0, 6).forEach(function(ch, idx) {
+      if (boxes[idx]) boxes[idx].value = ch;
+    });
+    boxes[Math.min(text.length, 5)].focus();
+    updateHidden();
+  });
+});
+boxes[0].focus();
+
+// Countdown timer
+let seconds = 600;
+const timerEl = document.getElementById('otp-timer');
+const tick = setInterval(function() {
+  seconds--;
+  if (seconds <= 0) {
+    clearInterval(tick);
+    timerEl.textContent = '0:00';
+    timerEl.style.color = 'var(--hv-red)';
+    btn.disabled = true;
+    btn.textContent = 'OTP Expired — Resend';
+    return;
+  }
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  timerEl.textContent = m + ':' + s.toString().padStart(2, '0');
+  if (seconds < 60) timerEl.style.color = 'var(--hv-red)';
+}, 1000);
+</script>
+{% endblock %}

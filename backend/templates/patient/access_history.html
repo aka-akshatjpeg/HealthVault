@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Access History (Audit Log)</h2>
+    <div class="table-responsive mt-4">
+        <table class="table table-striped">
+            <thead><tr><th>Time</th><th>Action</th><th>Actor</th><th>Resource</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for event in audit_events %}
+                <tr>
+                    <td>{{ event.timestamp.strftime('%d %b %H:%M') }}</td>
+                    <td><span class="badge bg-secondary">{{ event.action }}</span></td>
+                    <td>{{ event.actor_name }}</td>
+                    <td>{{ event.resource_description }}</td>
+                    <td>{{ event.status }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted">No access history found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

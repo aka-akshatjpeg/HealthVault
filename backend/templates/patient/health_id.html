@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% block title %}My Health ID — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+/* ── Health ID Card ───────────────────────────────────────────────────── */
+.hid-card {
+    background: var(--hv-surface);
+    border: 1px solid var(--hv-border);
+    border-radius: var(--hv-radius-xl);
+    border-left: 4px solid var(--hv-teal);
+    box-shadow: var(--hv-shadow-md);
+    overflow: hidden;
+    position: relative;
+}
+.hid-card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: var(--hv-teal-light);
+    pointer-events: none;
+}
+
+.hid-card-body {
+    padding: 32px;
+    display: flex;
+    gap: 32px;
+    align-items: stretch;
+}
+
+/* Left: info column */
+.hid-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.hid-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+.hid-brand-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--hv-teal-light);
+    display: flex; align-items: center; justify-content: center;
+}
+.hid-brand-icon i { font-size: 0.875rem; color: var(--hv-teal); }
+.hid-brand-name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--hv-teal);
+    text-transform: uppercase;
+}
+
+.hid-patient-name {
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: var(--hv-text-1);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 16px;
+}
+
+.hid-hvid-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background: var(--hv-surface-2);
+    border-radius: var(--hv-radius);
+    border: 1px solid var(--hv-border);
+}
+.hid-hvid-value {
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--hv-teal);
+    letter-spacing: 0.06em;
+    flex: 1;
+}
+.hid-copy-btn {
+    background: none;
+    border: none;
+    padding: 4px 6px;
+    border-radius: 6px;
+    color: var(--hv-text-3);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    font-size: 0.875rem;
+}
+.hid-copy-btn:hover { color: var(--hv-teal); background: var(--hv-teal-light); }
+
+.hid-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    flex: 1;
+}
+.hid-detail-item {}
+.hid-detail-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hv-text-3);
+    margin-bottom: 3px;
+}
+.hid-detail-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--hv-text-1);
+}
+
+.hid-card-footer-strip {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hv-border);
+    font-size: 0.75rem;
+    color: var(--hv-text-3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Right: QR column */
+.hid-qr-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    justify-content: center;
+}
+.hid-qr-frame {
+    background: #fff;
+    border-radius: var(--hv-radius);
+    border: 1px solid var(--hv-border);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--hv-shadow-sm);
+}
+.hid-qr-frame img {
+    width: 140px;
+    height: 140px;
+    display: block;
+}
+.hid-qr-caption {
+    font-size: 0.7rem;
+    color: var(--hv-text-3);
+    text-align: center;
+    max-width: 160px;
+    line-height: 1.4;
+}
+.hid-qr-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+/* ── Aadhaar strip (legacy) ───────────────────────────────────────────── */
+.hid-aadhaar-strip {
+    padding: 14px 20px;
+    background: var(--hv-surface-2);
+    border-top: 1px solid var(--hv-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ── Info Sections ────────────────────────────────────────────────────── */
+.hid-section {
+    background: var(--hv-surface);
+    border: 1px solid var(--hv-border);
+    border-radius: var(--hv-radius-lg);
+    padding: 24px;
+}
+.hid-section-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--hv-radius);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+.hid-info-list { list-style: none; padding: 0; margin: 0; }
+.hid-info-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--hv-border);
+    font-size: 0.875rem;
+    color: var(--hv-text-2);
+}
+.hid-info-list li:last-child { border-bottom: none; }
+.hid-info-list li i { color: var(--hv-text-3); margin-top: 2px; flex-shrink: 0; }
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .hid-card-body { flex-direction: column; }
+    .hid-qr-col { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; }
+    .hid-details-grid { grid-template-columns: 1fr; }
+    .hid-qr-actions { flex-direction: row; }
+}
+</style>
+
+<!-- Page Header -->
+<div class="page-header mb-5">
+    <div>
+        <h1 class="page-title">My Health ID</h1>
+        <p class="page-subtitle">Your universal digital health identity, accepted everywhere.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Health ID Card -->
+    <div class="col-12">
+        <div class="hid-card reveal">
+            <div class="hid-card-body">
+
+                <!-- Left: Patient Info -->
+                <div class="hid-info">
+                    <!-- Brand -->
+                    <div class="hid-brand">
+                        <div class="hid-brand-icon">
+                            <i class="bi bi-shield-fill-check"></i>
+                        </div>
+                        <span class="hid-brand-name">HealthVault</span>
+                    </div>
+
+                    <!-- Name -->
+                    <div class="hid-patient-name">{{ patient.full_name }}</div>
+
+                    <!-- HV-ID -->
+                    <div class="hid-hvid-row" id="hvIdRow">
+                        <span class="hid-hvid-value" id="hvIdValue">{{ patient.health_identity.hv_id }}</span>
+                        <button class="hid-copy-btn" onclick="copyHvId()" title="Copy HV-ID" aria-label="Copy HV-ID">
+                            <i class="bi bi-copy" id="copyIcon"></i>
+                        </button>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="hid-details-grid">
+                        {% if patient.blood_group %}
+                        <div class="hid-detail-item">
+                            <div class="hid-detail-label">Blood Group</div>
+                            <div class="hid-detail-value">{{ patient.blood_group }}</div>
+                        </div>
+                        {% endif %}
+                        {% if patient.date_of_birth %}
+                        <div class="hid-detail-item">
+                            <div class="hid-detail-label">Date of Birth</div>
+                            <div class="hid-detail-value">{{ patient.date_of_birth.strftime('%d %b %Y') }}</div>
+                        </div>
+                        {% endif %}
+                        {% if patient.biological_sex or patient.gender %}
+                        <div class="hid-detail-item">
+                            <div class="hid-detail-label">Biological Sex</div>
+                            <div class="hid-detail-value">{{ (patient.biological_sex or patient.gender) | capitalize }}</div>
+                        </div>
+                        {% endif %}
+                        <div class="hid-detail-item">
+                            <div class="hid-detail-label">Status</div>
+                            <div class="hid-detail-value">
+                                <span class="badge status-active" style="font-size: 0.75rem;">
+                                    <i class="bi bi-check-circle me-1"></i>Active
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer strip -->
+                    <div class="hid-card-footer-strip">
+                        <i class="bi bi-shield-check"></i>
+                        HealthVault — Your Health. Always With You.
+                    </div>
+                </div>
+
+                <!-- Right: QR Code -->
+                <div class="hid-qr-col">
+                    <div class="hid-qr-frame">
+                        <img src="data:image/png;base64,{{ patient.health_identity.qr_code_b64 }}"
+                             alt="Health ID QR Code"
+                             id="qrCodeImg">
+                    </div>
+                    <p class="hid-qr-caption">Scan to share records with doctors or labs</p>
+                    <div class="hid-qr-actions">
+                        <a href="data:image/png;base64,{{ patient.health_identity.qr_code_b64 }}"
+                           download="HealthVault-QR-{{ patient.health_identity.hv_id }}.png"
+                           class="btn btn-teal btn-sm w-100">
+                            <i class="bi bi-download me-1"></i> Download QR
+                        </a>
+                        <button class="btn btn-secondary btn-sm w-100" onclick="shareHealthId()">
+                            <i class="bi bi-share me-1"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {% if patient.aadhaar_number and patient.aadhaar_verified %}
+            <!-- Aadhaar strip -->
+            <div class="hid-aadhaar-strip">
+                <i class="bi bi-patch-check-fill text-success"></i>
+                <span style="font-size: 0.8125rem; color: var(--hv-text-2);">
+                    Linked Aadhaar &nbsp;
+                    <strong style="letter-spacing: 0.12em; color: var(--hv-text-1);">XXXX XXXX {{ patient.aadhaar_number[-4:] }}</strong>
+                </span>
+                <span class="badge status-active ms-2" style="font-size:0.7rem;">Verified</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Emergency Sharing -->
+    <div class="col-12 col-md-6">
+        <div class="hid-section reveal">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="hid-section-icon" style="background: var(--hv-red-light);">
+                    <i class="bi bi-heart-pulse-fill" style="color: var(--hv-red); font-size: 1.1rem;"></i>
+                </div>
+                <div>
+                    <div class="hv-label">Emergency Access</div>
+                    <h2 class="hv-card-title mb-0">What Responders Can See</h2>
+                </div>
+            </div>
+            <ul class="hid-info-list">
+                <li>
+                    <i class="bi bi-person-badge"></i>
+                    <span>Full name, blood group, and date of birth</span>
+                </li>
+                <li>
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Known allergies and critical drug interactions</span>
+                </li>
+                <li>
+                    <i class="bi bi-heart-pulse"></i>
+                    <span>Active medical conditions and diagnoses</span>
+                </li>
+                <li>
+                    <i class="bi bi-capsule"></i>
+                    <span>Current active medications and dosages</span>
+                </li>
+                <li>
+                    <i class="bi bi-telephone"></i>
+                    <span>Emergency contact information</span>
+                </li>
+            </ul>
+            <a href="{{ url_for('patient.emergency_card') }}" class="btn btn-secondary btn-sm mt-3">
+                <i class="bi bi-card-list me-1"></i> View Emergency Card
+            </a>
+        </div>
+    </div>
+
+    <!-- Share Records -->
+    <div class="col-12 col-md-6">
+        <div class="hid-section reveal">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="hid-section-icon" style="background: var(--hv-teal-light);">
+                    <i class="bi bi-shield-check" style="color: var(--hv-teal); font-size: 1.1rem;"></i>
+                </div>
+                <div>
+                    <div class="hv-label">Privacy &amp; Consent</div>
+                    <h2 class="hv-card-title mb-0">Share Your Records</h2>
+                </div>
+            </div>
+            <p style="font-size: 0.875rem; color: var(--hv-text-2); line-height: 1.6; margin-bottom: 16px;">
+                You are in full control of your health data. Share your QR code or HV-ID to grant
+                doctors and labs temporary, revocable access to your records.
+            </p>
+            <ul class="hid-info-list">
+                <li>
+                    <i class="bi bi-clock-history"></i>
+                    <span>Consent requests expire automatically</span>
+                </li>
+                <li>
+                    <i class="bi bi-list-check"></i>
+                    <span>View a full audit log of all access</span>
+                </li>
+                <li>
+                    <i class="bi bi-x-circle"></i>
+                    <span>Revoke access at any time, instantly</span>
+                </li>
+            </ul>
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ url_for('consent.requests') }}" class="btn btn-teal btn-sm">
+                    <i class="bi bi-shield-check me-1"></i> Manage Consent
+                </a>
+                <a href="{{ url_for('patient.access_history') }}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-list-check me-1"></i> Access Log
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyHvId() {
+    var val = document.getElementById('hvIdValue').textContent.trim();
+    navigator.clipboard.writeText(val).then(function() {
+        var icon = document.getElementById('copyIcon');
+        icon.className = 'bi bi-check2';
+        setTimeout(function() { icon.className = 'bi bi-copy'; }, 2000);
+    }).catch(function() {
+        /* fallback: select text */
+        var range = document.createRange();
+        range.selectNode(document.getElementById('hvIdValue'));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+    });
+}
+
+function shareHealthId() {
+    var hvId = document.getElementById('hvIdValue').textContent.trim();
+    if (navigator.share) {
+        navigator.share({
+            title: 'My HealthVault Health ID',
+            text: 'My HealthVault HV-ID: ' + hvId + '. Scan the QR code to access my health records.',
+        }).catch(function() {});
+    } else {
+        copyHvId();
+    }
+}
+</script>
+{% endblock %}

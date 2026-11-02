@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-greeting mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="fw-semibold">Documents</h1>
+        <p class="text-muted">Your medical records, prescriptions, and reports.</p>
+    </div>
+    <button class="btn btn-outline-dark px-4 bg-white" data-bs-toggle="modal" data-bs-target="#uploadModal">
+        <i class="bi bi-cloud-upload me-2"></i>Upload Document
+    </button>
+</div>
+
+<!-- Filter Tabs -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    {% for label, val in [('All', 'all'), ('Lab Reports', 'lab_report'), ('Prescriptions', 'prescription'), ('Imaging & Scans', 'imaging'), ('Vaccination Records', 'vaccination_record'), ('Discharge Summary', 'discharge_summary'), ('Insurance', 'insurance'), ('Other', 'other')] %}
+    <a href="?type={{ val }}" class="btn btn-sm {% if filter_type == val %}btn-dark text-white{% else %}btn-outline-secondary bg-white text-dark{% endif %} rounded-pill px-3">{{ label }}</a>
+    {% endfor %}
+</div>
+
+<!-- Documents Grid -->
+<div class="row g-4">
+    {% for doc in documents %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card h-100 border shadow-sm" style="border-radius: var(--radius-lg);">
+            <!-- File Type Icon -->
+            <div class="card-body text-center p-4">
+                <div class="mb-3 text-secondary" style="font-size: 2.5rem;">
+                    {% if doc.file_type in ['pdf'] %}
+                        <i class="bi bi-file-earmark-pdf"></i>
+                    {% elif doc.file_type in ['jpg', 'jpeg', 'png'] %}
+                        <i class="bi bi-file-earmark-image"></i>
+                    {% else %}
+                        <i class="bi bi-file-earmark-text"></i>
+                    {% endif %}
+                </div>
+                <h6 class="fw-medium text-dark mb-1 text-truncate" title="{{ doc.title }}">{{ doc.title }}</h6>
+                <span class="badge bg-light text-dark border mb-2 fw-normal">{{ doc.document_type|replace('_', ' ')|title }}</span>
+                <p class="text-muted small mb-0">
+                    {% if doc.document_date %}{{ doc.document_date.strftime('%d %b %Y') }}{% else %}Date unknown{% endif %}
+                </p>
+                {% if doc.provider %}
+                <p class="text-muted small mb-0">{{ doc.provider }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white border-top p-3 d-flex gap-2 justify-content-center">
+                <a href="{{ url_for('documents.view', doc_id=doc.id) }}" target="_blank" class="btn btn-sm btn-light border w-50"><i class="bi bi-eye me-1"></i>View</a>
+                <a href="{{ url_for('documents.download', doc_id=doc.id) }}" class="btn btn-sm btn-light border w-50"><i class="bi bi-download me-1"></i>Download</a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card border shadow-sm text-center py-5" style="border-radius: var(--radius-lg);">
+            <div class="card-body py-5">
+                <i class="bi bi-folder2-open text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 fw-medium text-dark">No documents yet</h5>
+                <p class="text-muted small mb-0">Click "Upload Document" to add your first medical record.</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+            <div class="modal-header border-bottom px-4 py-3">
+                <h5 class="modal-title fw-medium text-dark" id="uploadModalLabel">Upload New Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('documents.upload') }}" enctype="multipart/form-data">
+                <div class="modal-body p-4">
+                    <!-- File Drop Zone -->
+                    <div class="border border-secondary border-opacity-50 rounded-3 p-5 text-center mb-4 bg-light" id="dropZone" style="cursor: pointer; border-style: dashed !important;">
+                        <i class="bi bi-cloud-upload fs-2 text-secondary mb-2 d-block"></i>
+                        <h6 class="fw-medium text-dark">Drag & drop your file here, or <label for="fileInput" class="text-dark text-decoration-underline" style="cursor: pointer;">browse</label></h6>
+                        <p class="text-muted small mb-0">Supports PDF, JPG, PNG &bull; Max 16 MB</p>
+                        <input type="file" id="fileInput" name="file" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <div id="filePreview" class="mt-3 text-dark fw-medium d-none">
+                            <i class="bi bi-check2 me-2"></i><span id="fileName"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-dark small fw-medium">Document Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-light border-0" name="title" id="docTitle" placeholder="e.g. Blood Test Report" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dark small fw-medium">Document Type <span class="text-danger">*</span></label>
+                            <select class="form-select bg-light border-0" name="document_type" required>
+                                <option value="lab_report">Lab Report → Lab Reports section</option>
+                                <option value="prescription">Prescription → Medications section</option>
+                                <option value="imaging">Imaging / Scan → Surgeries & Procedures section</option>
+                                <option value="vaccination_record">Vaccination Record → Vaccinations section</option>
+                                <option value="discharge_summary">Discharge Summary → Conditions section</option>
+                                <option value="insurance">Insurance</option>
+                                <option value="other" selected>Other → Documents only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dark small fw-medium">Document Date</label>
+                            <input type="date" class="form-control bg-light border-0" name="document_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dark small fw-medium">Provider / Hospital</label>
+                            <input type="text" class="form-control bg-light border-0" name="provider" placeholder="e.g. City Diagnostics">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-dark px-4">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// File drag-drop and preview
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const filePreview = document.getElementById('filePreview');
+const fileNameSpan = document.getElementById('fileName');
+const docTitle = document.getElementById('docTitle');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.style.background = '#e9ecef';
+});
+dropZone.addEventListener('dragleave', () => {
+    dropZone.style.background = '';
+});
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.style.background = '';
+    if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleFile(e.dataTransfer.files[0]);
+    }
+});
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+    filePreview.classList.remove('d-none');
+    fileNameSpan.textContent = file.name;
+    // Auto-fill title from filename if empty
+    if (!docTitle.value) {
+        docTitle.value = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+    }
+}
+</script>
+{% endblock %}

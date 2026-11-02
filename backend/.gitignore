@@ -1,0 +1,23 @@
+# Environments
+venv/
+env/
+ENV/
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Config and Secrets
+.env
+instance/
+*.sqlite3
+*.db
+
+# Uploads
+uploads/
+
+# OS specific
+.DS_Store
+Thumbs.db

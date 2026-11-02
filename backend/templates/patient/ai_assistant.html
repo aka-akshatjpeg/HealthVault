@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+/* ── AI Page: minimal, Apple-inspired premium theme ───────────────────────────────────── */
+.page-content { padding: 0 !important; max-width: 100% !important; height: calc(100vh - 80px); }
+
+.ai-shell {
+    height: 100%;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── Hero Section ─────────────────────────────────────────────────────── */
+#aiHero {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 60px 24px 32px;
+    text-align: center; width: 100%; max-width: 720px; margin: 0 auto;
+    transition: all 0.4s ease;
+}
+#aiHero.chat-active { padding: 24px 24px 0px; margin-bottom: 0; }
+#aiHero.chat-active .ai-hero-title,
+#aiHero.chat-active .ai-hero-desc { display: none; }
+#aiHero.chat-active .ai-custom-logo { font-size: 2rem; margin-bottom: 0; color: var(--text-primary); }
+
+/* AI Icon/Logo */
+.ai-custom-logo {
+    font-size: 3.5rem;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    transition: all 0.4s ease;
+}
+
+/* Hero text */
+.ai-hero-title {
+    font-size: 2rem; font-weight: 600;
+    color: var(--text-primary); line-height: 1.2; margin-bottom: 12px;
+    letter-spacing: -0.02em;
+    transition: all 0.4s ease;
+}
+.ai-hero-desc {
+    font-size: 1rem; color: var(--text-secondary); transition: all 0.4s ease;
+    max-width: 400px; line-height: 1.5;
+}
+
+/* ── Input Card ───────────────────────────────────────────────────────── */
+.ai-input-wrapper {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    position: relative;
+}
+.ai-input-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 24px; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: flex; align-items: flex-end;
+    padding: 8px 12px;
+}
+.ai-input-card:focus-within {
+    border-color: #0d9488;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+.ai-input-box {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: var(--text-primary); font-size: 1rem; padding: 12px 16px;
+    resize: none; min-height: 48px; max-height: 120px; font-family: inherit;
+    line-height: 1.5;
+}
+.ai-input-box::placeholder { color: var(--text-muted); }
+
+.ai-send-btn {
+    width: 36px; height: 36px;
+    background: var(--text-primary);
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--bg-primary); font-size: 1rem; cursor: pointer;
+    transition: all 0.2s ease; flex-shrink: 0;
+    margin-bottom: 6px;
+}
+.ai-send-btn:hover { transform: scale(1.05); opacity: 0.9; }
+.ai-send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+/* ── Quick Prompt Chips ───────────────────────────────────────────────── */
+.ai-chips {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    justify-content: center;
+    padding: 24px 20px;
+    width: 100%; max-width: 720px; margin: 0 auto;
+    transition: all 0.4s ease;
+}
+.ai-chip {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px; padding: 10px 18px;
+    cursor: pointer; transition: all 0.2s ease;
+    color: var(--text-secondary);
+    font-size: 0.85rem; font-weight: 500;
+}
+.ai-chip:hover {
+    background: var(--bg-tertiary);
+    border-color: #0d9488;
+    color: var(--text-primary);
+}
+.ai-chip i { font-size: 1rem; }
+
+/* ── Chat History ─────────────────────────────────────────────────────── */
+#chatHistory {
+    width: 100%; max-width: 760px; margin: 0 auto;
+    flex: 1; overflow-y: auto;
+    padding: 24px;
+    display: none;
+}
+#chatHistory.visible { display: block; }
+.msg-row { display: flex; gap: 16px; margin-bottom: 32px; align-items: flex-start; }
+.msg-row.user { flex-direction: row-reverse; }
+
+.msg-avatar {
+    width: 36px; height: 36px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+}
+.msg-avatar.bot {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+.msg-avatar.user { background: #0f172a; color: #fff; }
+
+.msg-bubble {
+    max-width: 80%; line-height: 1.6; font-size: 1rem;
+    color: var(--text-primary);
+}
+.msg-row.user .msg-bubble {
+    background: var(--bg-secondary);
+    padding: 12px 18px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+}
+.msg-row.bot .msg-bubble {
+    padding: 4px 0; /* Minimal styling for bot text */
+}
+.msg-row.system .msg-bubble {
+    color: #ef4444; font-size: 0.9rem;
+}
+
+.msg-bubble p:last-child, .msg-bubble ul:last-child { margin-bottom: 0; }
+.msg-bubble ul, .msg-bubble ol { padding-left: 20px; }
+.msg-bubble strong { font-weight: 600; color: var(--text-primary); }
+.msg-bubble code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 6px; font-size: 0.85em; border: 1px solid var(--border-color); }
+
+/* Typing dots */
+.typing-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--text-secondary); border-radius: 50%; margin: 0 2px;
+    animation: bounce 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+
+/* Scrollbar */
+#chatHistory::-webkit-scrollbar { width: 6px; }
+#chatHistory::-webkit-scrollbar-track { background: transparent; }
+#chatHistory::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 6px; }
+
+/* Bottom sticky input */
+.ai-bottom {
+    width: 100%;
+    background: linear-gradient(to top, var(--bg-primary) 70%, transparent);
+    padding: 20px;
+    position: sticky; bottom: 0;
+    display: flex; justify-content: center;
+}
+.ai-bottom-inner { width: 100%; max-width: 720px; margin: 0; }
+
+.footer-text {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 12px;
+}
+</style>
+
+<div class="ai-shell" id="aiShell">
+
+    <!-- Hero -->
+    <div id="aiHero">
+        <div class="ai-custom-logo"><i class="bi bi-stars"></i></div>
+        <div class="ai-hero-title">HealthVault AI</div>
+        <div class="ai-hero-desc">Ask questions about your health records, lab reports, and medications.</div>
+    </div>
+
+    <!-- Chat History (hidden until first message) -->
+    <div id="chatHistory"></div>
+
+    <!-- Quick Chips (hidden after chat starts) -->
+    <div class="ai-chips" id="aiChips">
+        <button class="ai-chip" onclick="sendQuick('Summarize my latest lab report')">
+            <i class="bi bi-file-text"></i>
+            <span>Latest Lab Report</span>
+        </button>
+        <button class="ai-chip" onclick="sendQuick('List my active medications')">
+            <i class="bi bi-capsule"></i>
+            <span>My Medications</span>
+        </button>
+        <button class="ai-chip" onclick="sendQuick('Give me a health overview')">
+            <i class="bi bi-activity"></i>
+            <span>Health Overview</span>
+        </button>
+    </div>
+
+    <!-- Input Area -->
+    <div class="ai-bottom" id="aiBottom">
+        <div class="ai-bottom-inner">
+            <div class="ai-input-wrapper">
+                <form id="chatForm" onsubmit="return false;">
+                    <div class="ai-input-card">
+                        <textarea id="chatInput" class="ai-input-box" placeholder="Ask HealthVault AI..." rows="1" oninput="this.style.height = '';this.style.height = this.scrollHeight + 'px'"></textarea>
+                        <button type="submit" id="sendBtn" class="ai-send-btn">
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                    </div>
+                </form>
+                <div class="footer-text">AI can make mistakes. Consider verifying important clinical information.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    var chatForm    = document.getElementById('chatForm');
+    var chatInput   = document.getElementById('chatInput');
+    var chatHistory = document.getElementById('chatHistory');
+    var sendBtn     = document.getElementById('sendBtn');
+    var aiHero      = document.getElementById('aiHero');
+    var aiChips     = document.getElementById('aiChips');
+    var chatStarted = false;
+
+    function activateChat() {
+        if (chatStarted) return;
+        chatStarted = true;
+        aiHero.classList.add('chat-active');
+        aiChips.style.display = 'none';
+        chatHistory.classList.add('visible');
+    }
+
+    function addMessage(role, htmlContent) {
+        activateChat();
+        var row = document.createElement('div');
+        row.className = 'msg-row ' + role;
+        var icon = role === 'user' ? 'bi-person' : 'bi-stars';
+        var avatarClass = role === 'user' ? 'user' : 'bot';
+        row.innerHTML =
+            '<div class="msg-avatar ' + avatarClass + '"><i class="bi ' + icon + '"></i></div>' +
+            '<div class="msg-bubble">' + htmlContent + '</div>';
+        chatHistory.appendChild(row);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        return row;
+    }
+
+    function addTyping() {
+        var row = document.createElement('div');
+        row.className = 'msg-row bot';
+        row.id = 'typingIndicator';
+        row.innerHTML =
+            '<div class="msg-avatar bot"><i class="bi bi-stars"></i></div>' +
+            '<div class="msg-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+        chatHistory.appendChild(row);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        return row;
+    }
+
+    function sendMessage(msg) {
+        if (!msg) return;
+        addMessage('user', msg);
+        chatInput.value = '';
+        chatInput.style.height = '';
+        chatInput.disabled = true;
+        sendBtn.disabled = true;
+
+        var typing = addTyping();
+
+        fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            typing.remove();
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            chatInput.focus();
+            if (data.error) {
+                addMessage('system', '<i class="bi bi-exclamation-triangle me-1"></i> ' + data.error);
+            } else {
+                addMessage('bot', data.response);
+            }
+        })
+        .catch(function() {
+            typing.remove();
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            addMessage('system', '<i class="bi bi-wifi-off me-1"></i> Network error.');
+        });
+    }
+
+    sendBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var msg = chatInput.value.trim();
+        if (msg) sendMessage(msg);
+    });
+
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            var msg = chatInput.value.trim();
+            if (msg) sendMessage(msg);
+        }
+    });
+
+    window.sendQuick = function(prompt) {
+        chatInput.value = prompt;
+        sendMessage(prompt);
+    };
+
+    function clearHistory() { navigator.sendBeacon('/api/ai/clear-history'); }
+    window.addEventListener('pagehide', clearHistory);
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') clearHistory();
+    });
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block title %}Health Summary — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+/* ── Health Summary Page Styles ────────────────────────────────────── */
+.summary-hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%);
+    border-radius: 16px;
+    color: #fff;
+    padding: 32px 36px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.summary-hero::after {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+.summary-hero h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+.summary-hero p  { opacity: .85; margin: 0; font-size: .95rem; }
+
+/* ── Major Condition Banner ─────────────────────────────────────────── */
+.major-condition-card {
+    border-left: 5px solid #ef4444;
+    background: linear-gradient(135deg, rgba(239,68,68,.08) 0%, rgba(239,68,68,.02) 100%);
+    border-radius: 0 12px 12px 0;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+}
+body.dark-mode .major-condition-card {
+    background: linear-gradient(135deg, rgba(239,68,68,.18) 0%, rgba(239,68,68,.06) 100%);
+    border-color: #ef4444;
+}
+.major-condition-card .label {
+    font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+    color: #ef4444; text-transform: uppercase; margin-bottom: 4px;
+}
+.major-condition-card .condition-name {
+    font-size: 1.4rem; font-weight: 700; color: #ef4444; margin-bottom: 6px;
+}
+body.dark-mode .major-condition-card .condition-name { color: #f87171; }
+.severity-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600;
+}
+.severity-severe   { background: #fee2e2; color: #b91c1c; }
+.severity-moderate { background: #fef3c7; color: #92400e; }
+.severity-mild     { background: #d1fae5; color: #065f46; }
+body.dark-mode .severity-severe   { background: rgba(239,68,68,.2);   color: #fca5a5; }
+body.dark-mode .severity-moderate { background: rgba(245,158,11,.2); color: #fcd34d; }
+body.dark-mode .severity-mild     { background: rgba(16,185,129,.2);  color: #6ee7b7; }
+
+/* ── Stat Bar ──────────────────────────────────────────────────────── */
+.stat-bar {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
+}
+.stat-tile {
+    flex: 1; min-width: 130px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.stat-tile .st-number { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.stat-tile .st-label  { font-size: .78rem; color: var(--text-muted, #64748b); font-weight: 500; }
+.st-blue   .st-number { color: #4f46e5; }
+.st-green  .st-number { color: #10b981; }
+.st-amber  .st-number { color: #f59e0b; }
+.st-red    .st-number { color: #ef4444; }
+body.dark-mode .stat-tile {
+    background: var(--card-bg); border-color: var(--border-color);
+}
+body.dark-mode .st-blue  .st-number { color: #89CFF0; }
+body.dark-mode .st-green .st-number { color: #6ee7b7; }
+body.dark-mode .st-amber .st-number { color: #fcd34d; }
+body.dark-mode .st-red   .st-number { color: #f87171; }
+
+/* ── Section cards ─────────────────────────────────────────────────── */
+.sum-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 16px; margin-bottom: 20px;
+    overflow: hidden;
+}
+.sum-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+.sum-card-header h6 {
+    margin: 0; font-weight: 700; font-size: .9rem;
+    display: flex; align-items: center; gap: 8px;
+}
+.sum-card-body { padding: 0; }
+.sum-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color, #f1f5f9);
+    gap: 12px;
+}
+.sum-row:last-child { border-bottom: none; }
+.sum-row-title { font-weight: 600; font-size: .9rem; margin-bottom: 2px; }
+.sum-row-sub   { font-size: .78rem; color: var(--text-muted, #64748b); }
+.sum-row-right { text-align: right; white-space: nowrap; font-size: .8rem; color: var(--text-muted, #64748b); }
+
+/* Icon circles */
+.icon-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: .95rem;
+}
+.ic-blue   { background: rgba(79,70,229,.12); color: #4f46e5; }
+.ic-green  { background: rgba(16,185,129,.12); color: #10b981; }
+.ic-amber  { background: rgba(245,158,11,.12); color: #f59e0b; }
+.ic-red    { background: rgba(239,68,68,.12);  color: #ef4444; }
+.ic-sky    { background: rgba(14,165,233,.12); color: #0ea5e9; }
+body.dark-mode .ic-blue  { background: rgba(137,207,240,.15); color: #89CFF0; }
+body.dark-mode .ic-green { background: rgba(16,185,129,.15);  color: #6ee7b7; }
+body.dark-mode .ic-amber { background: rgba(245,158,11,.15);  color: #fcd34d; }
+body.dark-mode .ic-red   { background: rgba(239,68,68,.15);   color: #f87171; }
+body.dark-mode .ic-sky   { background: rgba(14,165,233,.15);  color: #7dd3fc; }
+
+.empty-state { text-align: center; padding: 24px; color: var(--text-muted, #94a3b8); font-size: .88rem; }
+</style>
+
+<!-- ── Hero Header ───────────────────────────────────────────────────── -->
+<div class="summary-hero">
+    <div class="d-flex align-items-center gap-3 mb-2">
+        <i class="bi bi-clipboard2-pulse-fill fs-2"></i>
+        <div>
+            <h1>Health Summary</h1>
+            <p>
+                {{ patient.full_name }} &nbsp;·&nbsp;
+                <span class="opacity-75">Activity from {{ two_months_ago.strftime('%d %b') }} – {{ now.strftime('%d %b %Y') }}</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ── Major Condition Banner ─────────────────────────────────────────── -->
+{% if major_condition %}
+<div class="major-condition-card d-flex align-items-start gap-3">
+    <div class="mt-1">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+    </div>
+    <div class="flex-grow-1">
+        <div class="label">Primary / Major Condition</div>
+        <div class="condition-name">{{ major_condition.condition_name }}</div>
+        <div class="d-flex flex-wrap gap-2 align-items-center mt-1">
+            {% if major_condition.severity %}
+            <span class="severity-badge severity-{{ major_condition.severity }}">
+                <i class="bi bi-circle-fill" style="font-size:.5rem;"></i>
+                {{ major_condition.severity|capitalize }}
+            </span>
+            {% endif %}
+            <span class="text-muted small">Status: <strong>{{ major_condition.status|capitalize }}</strong></span>
+            {% if major_condition.treating_doctor %}
+            <span class="text-muted small">· Managed by <strong>{{ major_condition.treating_doctor }}</strong></span>
+            {% endif %}
+            {% if major_condition.diagnosis_date %}
+            <span class="text-muted small">· Diagnosed {{ major_condition.diagnosis_date.strftime('%d %b %Y') }}</span>
+            {% endif %}
+        </div>
+        {% if major_condition.notes %}
+        <p class="mt-2 mb-0 small" style="opacity:.75;">{{ major_condition.notes }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Activity Stats for Last 2 Months ─────────────────────────────── -->
+<div class="stat-bar">
+    <div class="stat-tile st-blue">
+        <span class="st-number">{{ recent_reports|length }}</span>
+        <span class="st-label">Lab Reports<br><span style="font-size:.7rem;">Last 60 days</span></span>
+    </div>
+    <div class="stat-tile st-green">
+        <span class="st-number">{{ recent_encounters|length }}</span>
+        <span class="st-label">Doctor Visits<br><span style="font-size:.7rem;">Last 60 days</span></span>
+    </div>
+    <div class="stat-tile st-amber">
+        <span class="st-number">{{ active_meds|length }}</span>
+        <span class="st-label">Active<br>Medications</span>
+    </div>
+    <div class="stat-tile st-red">
+        <span class="st-number">{{ active_conditions|length }}</span>
+        <span class="st-label">Active<br>Conditions</span>
+    </div>
+    <div class="stat-tile" style="--st-color:#0ea5e9;">
+        <span class="st-number" style="color:#0ea5e9;">{{ allergies|length }}</span>
+        <span class="st-label">Known<br>Allergies</span>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- LEFT COLUMN ─────────────────────────────────────────────────── -->
+    <div class="col-lg-8">
+
+        <!-- Recent Lab Reports (last 2 months) -->
+        <div class="sum-card">
+            <div class="sum-card-header">
+                <h6><i class="bi bi-file-earmark-medical ic-blue icon-circle me-1"></i>Lab Reports — Last 2 Months</h6>
+                <a href="{{ url_for('patient.lab_reports') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="sum-card-body">
+                {% for r in recent_reports %}
+                <div class="sum-row">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle ic-blue"><i class="bi bi-file-earmark-text"></i></div>
+                        <div>
+                            <div class="sum-row-title">{{ r.report_name }}</div>
+                            <div class="sum-row-sub">{{ r.laboratory or 'Unknown Lab' }}</div>
+                        </div>
+                    </div>
+                    <div class="sum-row-right">
+                        {{ r.report_date.strftime('%d %b %Y') }}
+                        <div><span class="badge bg-success-subtle text-success" style="font-size:.7rem;">{{ r.status|capitalize }}</span></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-inbox d-block fs-3 mb-1 opacity-50"></i>No lab reports in the last 2 months</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Doctor Visits (last 2 months) -->
+        <div class="sum-card">
+            <div class="sum-card-header">
+                <h6><i class="bi bi-hospital icon-circle ic-sky me-1"></i>Doctor Visits — Last 2 Months</h6>
+            </div>
+            <div class="sum-card-body">
+                {% for e in recent_encounters %}
+                <div class="sum-row">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle ic-sky"><i class="bi bi-person-badge"></i></div>
+                        <div>
+                            <div class="sum-row-title">{{ e.doctor_name or 'Unknown Doctor' }}</div>
+                            <div class="sum-row-sub">{{ e.facility or 'Unknown Facility' }}{% if e.specialty %} · {{ e.specialty }}{% endif %}</div>
+                            {% if e.reason %}<div class="sum-row-sub mt-1" style="font-style:italic;">"{{ e.reason }}"</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="sum-row-right">
+                        {{ e.encounter_date.strftime('%d %b %Y') }}
+                        <div><span class="badge bg-secondary-subtle text-secondary" style="font-size:.7rem;">{{ e.encounter_type|capitalize if e.encounter_type else 'Visit' }}</span></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-calendar-x d-block fs-3 mb-1 opacity-50"></i>No visits recorded in the last 2 months</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- All Active Conditions -->
+        <div class="sum-card">
+            <div class="sum-card-header">
+                <h6><i class="bi bi-heart-pulse icon-circle ic-red me-1"></i>All Active Conditions</h6>
+                <a href="{{ url_for('patient.conditions') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+            </div>
+            <div class="sum-card-body">
+                {% for c in active_conditions %}
+                <div class="sum-row">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle ic-red"><i class="bi bi-bandaid"></i></div>
+                        <div>
+                            <div class="sum-row-title">{{ c.condition_name }}</div>
+                            <div class="sum-row-sub">
+                                {% if c.treating_doctor %}Managed by {{ c.treating_doctor }} · {% endif %}
+                                {% if c.diagnosis_date %}Since {{ c.diagnosis_date.strftime('%b %Y') }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sum-row-right">
+                        {% if c.severity %}
+                        <span class="severity-badge severity-{{ c.severity }}">{{ c.severity|capitalize }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-check-circle d-block fs-3 mb-1 opacity-50"></i>No active conditions — great news!</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN ─────────────────────────────────────────────────── -->
+    <div class="col-lg-4">
+
+        <!-- Current Medications -->
+        <div class="sum-card">
+            <div class="sum-card-header">
+                <h6><i class="bi bi-capsule icon-circle ic-green me-1"></i>Current Medications</h6>
+                <a href="{{ url_for('patient.medications') }}" class="btn btn-sm btn-outline-primary">View</a>
+            </div>
+            <div class="sum-card-body">
+                {% for m in active_meds %}
+                <div class="sum-row">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle ic-green"><i class="bi bi-capsule-pill"></i></div>
+                        <div>
+                            <div class="sum-row-title">{{ m.medicine_name }}</div>
+                            <div class="sum-row-sub">{{ m.dosage }}{% if m.frequency %} · {{ m.frequency }}{% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">No active medications</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Known Allergies -->
+        <div class="sum-card">
+            <div class="sum-card-header">
+                <h6><i class="bi bi-exclamation-diamond icon-circle ic-amber me-1"></i>Allergies</h6>
+                <a href="{{ url_for('patient.allergies') }}" class="btn btn-sm btn-outline-primary">View</a>
+            </div>
+            <div class="sum-card-body">
+                {% for a in allergies %}
+                <div class="sum-row">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle ic-amber"><i class="bi bi-shield-exclamation"></i></div>
+                        <div>
+                            <div class="sum-row-title">{{ a.allergen }}</div>
+                            <div class="sum-row-sub">
+                                {{ a.reaction or 'Reaction unknown' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sum-row-right">
+                        {% if a.severity %}
+                        <span class="severity-badge severity-{{ 'severe' if a.severity == 'life-threatening' else a.severity }}">
+                            {{ a.severity|replace('-', ' ')|capitalize }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">No known allergies on file</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Immunizations -->
+        <div class="sum-card">
+            <div class="sum-card-header">
+                <h6><i class="bi bi-shield-check icon-circle ic-green me-1"></i>Vaccinations</h6>
+                <a href="{{ url_for('patient.vaccinations') }}" class="btn btn-sm btn-outline-primary">View</a>
+            </div>
+            <div class="sum-card-body">
+                {% for v in immunizations[:5] %}
+                <div class="sum-row">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-circle ic-green"><i class="bi bi-droplet-fill"></i></div>
+                        <div>
+                            <div class="sum-row-title">{{ v.vaccine_name }}</div>
+                            <div class="sum-row-sub">{{ v.vaccination_date.strftime('%d %b %Y') if v.vaccination_date else 'Date unknown' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">No immunization records</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

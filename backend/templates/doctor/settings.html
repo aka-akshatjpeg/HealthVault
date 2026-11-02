@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}My Profile — HealthVault Doctor{% endblock %}
+
+{% block content %}
+<style>
+.settings-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+}
+.settings-header h4 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.settings-header h4 i { color: var(--primary); }
+.settings-header p { font-size: .85rem; color: var(--text-muted); margin-bottom: 20px; }
+.view-label { font-size: .75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+.view-value { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+.empty-val { color: var(--text-muted); font-style: italic; font-weight: 400; }
+.avatar-ring {
+    width: 96px; height: 96px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #0ea5e9);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; color: white;
+    box-shadow: 0 8px 24px rgba(79,70,229,.35);
+    flex-shrink: 0;
+}
+.badge-verified {
+    background: rgba(16,185,129,.15);
+    color: #10b981;
+    border: 1px solid rgba(16,185,129,.3);
+    border-radius: 30px;
+    padding: 4px 14px;
+    font-size: .78rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+</style>
+
+<div class="page-greeting mb-4">
+    <h1><i class="bi bi-person-badge me-2"></i>My Profile</h1>
+    <p>Your professional information and account details.</p>
+</div>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for cat, msg in messages %}
+<div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}{% endif %}
+{% endwith %}
+
+<!-- ── VIEW MODE ───────────────────────────────────────────────────────────── -->
+<div id="viewMode">
+
+    <!-- Header card -->
+    <div class="settings-card">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
+            <div class="avatar-ring"><i class="bi bi-person-fill"></i></div>
+            <div class="flex-grow-1">
+                <h2 class="fw-black mb-1">Dr. {{ provider.full_name }}</h2>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="badge bg-primary bg-opacity-15 text-primary border border-primary-subtle px-3 py-2">
+                        <i class="bi bi-heart-pulse me-1"></i>{{ provider.specialty or 'General Practitioner' }}
+                    </span>
+                    <span class="badge-verified"><i class="bi bi-patch-check-fill"></i> Verified Doctor</span>
+                </div>
+                <div class="text-muted small">
+                    {% if provider.organization %}<i class="bi bi-hospital me-1"></i>{{ provider.organization.name }}{% endif %}
+                    {% if provider.registration_number %} &nbsp;·&nbsp; <i class="bi bi-card-text me-1"></i>Reg: {{ provider.registration_number }}{% endif %}
+                </div>
+            </div>
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm" onclick="toggleEditMode(true)">
+                <i class="bi bi-pencil-fill me-2"></i>Edit Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Contact & Professional Details -->
+    <div class="settings-card">
+        <div class="settings-header">
+            <h4><i class="bi bi-person-vcard"></i> Professional Details</h4>
+            <p>Your registration and contact information visible to hospitals and patients.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="view-label">Full Name</div>
+                <div class="view-value">Dr. {{ provider.full_name }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="view-label">Specialty</div>
+                <div class="view-value">{{ provider.specialty or '<span class="empty-val">Not specified</span>'|safe }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="view-label">Registration Number</div>
+                <div class="view-value">{{ provider.registration_number or '<span class="empty-val">Not provided</span>'|safe }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="view-label">Phone</div>
+                <div class="view-value">{{ provider.phone or '<span class="empty-val">Not provided</span>'|safe }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="view-label">Email</div>
+                <div class="view-value">{{ current_user.email }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="view-label">Hospital / Organisation</div>
+                <div class="view-value">{{ provider.organization.name if provider.organization else '<span class="empty-val">Independent</span>'|safe }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Info -->
+    <div class="settings-card">
+        <div class="settings-header">
+            <h4><i class="bi bi-shield-lock"></i> Account Information</h4>
+            <p>Login credentials and security details. Contact support to change your email.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="view-label">Registered Email</div>
+                <div class="view-value">{{ current_user.email }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="view-label">Account Role</div>
+                <div class="view-value"><span class="badge bg-success-subtle text-success px-3 py-2">Doctor</span></div>
+            </div>
+            <div class="col-md-6">
+                <div class="view-label">Member Since</div>
+                <div class="view-value">{{ current_user.created_at.strftime('%B %Y') if current_user.created_at else '—' }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="view-label">Last Login</div>
+                <div class="view-value">{{ current_user.last_login.strftime('%d %b %Y, %I:%M %p') if current_user.last_login else '—' }}</div>
+            </div>
+        </div>
+    </div>
+</div><!-- /viewMode -->
+
+<!-- ── EDIT MODE ──────────────────────────────────────────────────────────── -->
+<div id="editMode" style="display:none;">
+    <form method="POST" action="{{ url_for('doctor.settings') }}">
+        <div class="settings-card">
+            <div class="settings-header">
+                <h4><i class="bi bi-person-vcard"></i> Edit Professional Details</h4>
+                <p>Update your contact and professional information.</p>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Full Name</label>
+                    <input type="text" name="full_name" class="form-control" value="{{ provider.full_name }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Medical Specialty</label>
+                    <input type="text" name="specialty" class="form-control" value="{{ provider.specialty or '' }}" placeholder="e.g. Cardiology, General Medicine">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Phone Number</label>
+                    <input type="tel" name="phone" class="form-control" value="{{ provider.phone or '' }}" placeholder="+91 XXXXX XXXXX">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Medical Registration Number</label>
+                    <input type="text" name="registration_number" class="form-control" value="{{ provider.registration_number or '' }}" placeholder="e.g. MCI-12345">
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-3 mb-5">
+            <button type="button" class="btn btn-light btn-lg px-4 fw-bold rounded-pill" onclick="toggleEditMode(false)">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm fw-bold rounded-pill">
+                <i class="bi bi-check2-circle me-1"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div><!-- /editMode -->
+
+<script>
+function toggleEditMode(showEdit) {
+    document.getElementById('viewMode').style.display = showEdit ? 'none' : 'block';
+    document.getElementById('editMode').style.display  = showEdit ? 'block' : 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+{% endblock %}

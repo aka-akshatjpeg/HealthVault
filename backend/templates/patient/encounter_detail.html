@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Encounter Detail - HealthVault{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Encounter Details</h2>
+    <p>Details about the encounter will be displayed here.</p>
+    <a href="{{ url_for('patient.timeline') }}" class="btn btn-secondary">Back to Timeline</a>
+</div>
+{% endblock %}

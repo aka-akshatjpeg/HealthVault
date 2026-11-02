@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="bento-grid">
+
+    <!-- Hero Greeting Widget -->
+    <div class="bento-widget bento-wide reveal" style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 4px;">Patient Portal</p>
+            <h1 style="font-size: 2.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Good Morning, {{ patient.full_name.split()[0] }}</h1>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; font-family: monospace;">{{ patient.health_identity.hv_id }}</span>
+                {% if patient.blood_group %}
+                <span style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;">
+                    <i class="bi bi-droplet me-1" style="color: #0d9488;"></i>{{ patient.blood_group }}
+                </span>
+                {% endif %}
+                {% if patient.date_of_birth %}
+                <span style="color: var(--text-secondary); font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 12px; border-radius: 999px;">
+                    <i class="bi bi-calendar3 me-1"></i>{{ patient.date_of_birth.strftime('%d %b %Y') }}
+                </span>
+                {% endif %}
+                {% if unread_notifications > 0 %}
+                <span style="background: #0f172a; color: #fff; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;">
+                    <i class="bi bi-bell me-1"></i>{{ unread_notifications }} New
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div style="font-size: 3rem; color: #0d9488; opacity: 0.8;">
+            <i class="bi bi-person-circle"></i>
+        </div>
+    </div>
+
+    <!-- Medical Records Widget -->
+    <div class="bento-widget reveal bento-wide" style="grid-column: 1 / -1;">
+        <h4 style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 1rem;">Medical Records</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
+            <a href="{{ url_for('patient.lab_reports') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-file-text fs-4"></i>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Reports</span>
+            </a>
+            <a href="{{ url_for('patient.medications') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-capsule fs-4"></i>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Medications</span>
+            </a>
+            <a href="{{ url_for('patient.vaccinations') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-shield-check fs-4"></i>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Vaccines</span>
+            </a>
+            <a href="{{ url_for('patient.conditions') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-activity fs-4"></i>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Conditions</span>
+            </a>
+            <a href="{{ url_for('patient.allergies') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-exclamation-triangle fs-4"></i>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Allergies</span>
+            </a>
+            <a href="{{ url_for('patient.procedures') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-heart-pulse fs-4"></i>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">Surgeries & Procedures</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions Widget -->
+    <div class="bento-widget reveal bento-wide" style="grid-column: 1 / -1;">
+        <h4 style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 1rem;">Quick Actions</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
+            <a href="{{ url_for('ai.assistant_page') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-stars fs-5"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary);">Ask AI</span>
+            </a>
+            <a href="{{ url_for('patient.timeline') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-clock-history fs-5"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary);">Timeline</span>
+            </a>
+            <a href="{{ url_for('patient.health_id') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-qr-code fs-5"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary);">Health ID</span>
+            </a>
+            <a href="{{ url_for('patient.emergency_card') }}" style="text-decoration: none; text-align: center; display: block;">
+                <div style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-shield-plus fs-5"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-secondary);">Emergency</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Widgets -->
+    <div class="bento-widget reveal d-flex flex-column align-items-center justify-content-center text-center">
+        <div style="color: var(--text-secondary); margin-bottom: 8px;">
+            <i class="bi bi-file-text fs-4"></i>
+        </div>
+        <h2 data-counter="{{ recent_reports|length }}" style="font-weight: 600; margin-bottom: 0; line-height: 1; font-size: 2rem; color: var(--text-primary);">{{ recent_reports|length }}</h2>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-top: 4px;">Lab Reports</p>
+    </div>
+
+    <div class="bento-widget reveal d-flex flex-column align-items-center justify-content-center text-center">
+        <div style="color: var(--text-secondary); margin-bottom: 8px;">
+            <i class="bi bi-capsule fs-4"></i>
+        </div>
+        <h2 data-counter="{{ active_medications|length }}" style="font-weight: 600; margin-bottom: 0; line-height: 1; font-size: 2rem; color: var(--text-primary);">{{ active_medications|length }}</h2>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-top: 4px;">Active Meds</p>
+    </div>
+
+    <div class="bento-widget reveal d-flex flex-column align-items-center justify-content-center text-center">
+        <div style="color: var(--text-secondary); margin-bottom: 8px;">
+            <i class="bi bi-activity fs-4"></i>
+        </div>
+        <h2 data-counter="{{ active_conditions|length }}" style="font-weight: 600; margin-bottom: 0; line-height: 1; font-size: 2rem; color: var(--text-primary);">{{ active_conditions|length }}</h2>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-top: 4px;">Conditions</p>
+    </div>
+
+    <div class="bento-widget reveal d-flex flex-column align-items-center justify-content-center text-center">
+        <div style="color: var(--text-secondary); margin-bottom: 8px;">
+            <i class="bi bi-clock fs-4"></i>
+        </div>
+        <h2 data-counter="{{ pending_requests }}" style="font-weight: 600; margin-bottom: 0; line-height: 1; font-size: 2rem; color: var(--text-primary);">{{ pending_requests }}</h2>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-top: 4px;">Pending Requests</p>
+    </div>
+
+    <!-- Recent Reports Widget -->
+    <div class="bento-widget bento-wide reveal">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin: 0;">Recent Lab Reports</h4>
+            <a href="{{ url_for('patient.lab_reports') }}" style="color: #0d9488; font-size: 0.85rem; font-weight: 500; text-decoration: none;">View All</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for report in recent_reports %}
+            <a href="{{ url_for('patient.lab_report_detail', report_id=report.id) }}" class="d-flex justify-content-between align-items-center" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-color); text-decoration: none;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="color: var(--text-secondary);">
+                        <i class="bi bi-file-text fs-5"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">{{ report.report_name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ report.laboratory }}</div>
+                    </div>
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="bi bi-calendar3 me-1"></i>{{ report.report_date.strftime('%d %b %Y') }}</span>
+            </a>
+            {% else %}
+            <div class="text-center py-4" style="color: var(--text-muted);">
+                <span style="font-size: 0.9rem;">No recent reports</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Active Conditions Widget -->
+    <div class="bento-widget reveal">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin: 0;">Conditions</h4>
+            <a href="{{ url_for('patient.conditions') }}" style="color: #0d9488; font-size: 0.85rem; font-weight: 500; text-decoration: none;">Manage</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for cond in active_conditions %}
+            <a href="{{ url_for('patient.conditions') }}" class="d-flex justify-content-between align-items-center" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-color); text-decoration: none;">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <div style="font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">{{ cond.condition_name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Diagnosed: {{ cond.diagnosis_date.strftime('%Y') if cond.diagnosis_date else 'Unknown' }}</div>
+                    </div>
+                </div>
+                <span style="background: #0f172a; color: #fff; font-size: 0.7rem; font-weight: 500; padding: 2px 8px; border-radius: 999px;">Active</span>
+            </a>
+            {% else %}
+            <div class="text-center py-4" style="color: var(--text-muted);">
+                <span style="font-size: 0.9rem;">No active conditions</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Active Medications Widget -->
+    <div class="bento-widget reveal">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin: 0;">Medications</h4>
+            <a href="{{ url_for('patient.medications') }}" style="color: #0d9488; font-size: 0.85rem; font-weight: 500; text-decoration: none;">View All</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for med in active_medications[:4] %}
+            <div class="d-flex justify-content-between align-items-center" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <div style="font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">{{ med.medicine_name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ med.dosage or '' }} {{ med.frequency or '' }}</div>
+                    </div>
+                </div>
+                <span style="background: #0f172a; color: #fff; font-size: 0.7rem; font-weight: 500; padding: 2px 8px; border-radius: 999px;">Active</span>
+            </div>
+            {% else %}
+            <div class="text-center py-4" style="color: var(--text-muted);">
+                <span style="font-size: 0.9rem;">No active medications</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Recent Visits / Encounters Widget -->
+    <div class="bento-widget reveal">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin: 0;">Recent Visits</h4>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for enc in recent_encounters %}
+            <div class="d-flex justify-content-between align-items-center" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <div style="font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">{{ enc.doctor_name or 'Visit' }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ enc.facility or '' }}</div>
+                    </div>
+                </div>
+                <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="bi bi-calendar3 me-1"></i>{{ enc.encounter_date.strftime('%d %b %Y') }}</span>
+            </div>
+            {% else %}
+            <div class="text-center py-4" style="color: var(--text-muted);">
+                <span style="font-size: 0.9rem;">No recent visits</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

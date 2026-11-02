@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}Choose Your Portal — HealthVault{% endblock %}
+
+{% block content %}
+<style>\n  /* Fix scrolling for public pages */\n  body { overflow-y: auto !important; height: auto !important; }
+  .auth-page-split {
+    min-height: calc(100vh - var(--hv-topbar-height, 60px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: linear-gradient(rgba(245, 247, 250, 0.85), rgba(245, 247, 250, 0.95)), url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?q=80&w=2000&auto=format&fit=crop') center/cover fixed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body.dark-mode .auth-page-split { background: linear-gradient(rgba(8, 13, 18, 0.9), rgba(8, 13, 18, 0.98)), url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?q=80&w=2000&auto=format&fit=crop') center/cover fixed; }
+
+  .auth-container-split {
+    display: flex;
+    width: 100%;
+    max-width: 1150px;
+    min-height: 700px;
+    background: #FFFFFF;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+  }
+  body.dark-mode .auth-container-split {
+    background: #10171D;
+    border-color: #1A242E;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  }
+
+  /* Left Column */
+  .auth-left {
+    width: 45%;
+    padding: 60px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .auth-logo { margin-bottom: 40px; height: 38px; }
+  
+  .auth-heading {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .auth-subheading {
+    font-size: 1rem;
+    color: #64748B;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+  body.dark-mode .auth-heading { color: #F5F7F8; }
+  body.dark-mode .auth-subheading { color: #8B98A3; }
+
+  .proto-notice {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    color: #64748B;
+    margin-bottom: 40px;
+    align-self: flex-start;
+    font-weight: 600;
+  }
+  body.dark-mode .proto-notice { background: #151E25; border-color: #2A3642; color: #8B98A3; }
+
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 32px 0;
+    color: #64748B;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .auth-divider::before, .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #E2E8F0;
+  }
+  body.dark-mode .auth-divider { color: #8B98A3; }
+  body.dark-mode .auth-divider::before, body.dark-mode .auth-divider::after { background: #1E293B; }
+
+  .auth-register-link {
+    text-align: left;
+    font-size: 0.9rem;
+    color: #64748B;
+  }
+  .auth-register-link a { color: var(--hv-teal); font-weight: 600; text-decoration: none; }
+
+  /* Right Column */
+  .auth-right {
+    width: 55%;
+    background: #F3F8F7;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 80px;
+  }
+  body.dark-mode .auth-right { background: #111B20; }
+  
+  .portal-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 440px;
+  }
+
+  /* Portal Card Row */
+  .portal-card-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .portal-card-row:hover {
+    border-color: var(--hv-teal);
+    box-shadow: 0 12px 32px rgba(13,148,136,0.08);
+    transform: translateY(-2px);
+  }
+  body.dark-mode .portal-card-row { background: #151E25; border-color: #2A3642; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  body.dark-mode .portal-card-row:hover { border-color: var(--hv-teal); background: #1A242E; }
+
+  .portal-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: rgba(13,148,136,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--hv-teal);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  body.dark-mode .portal-icon-box { background: rgba(13,148,136,0.15); }
+  .portal-card-row:hover .portal-icon-box { background: rgba(13,148,136,0.15); }
+
+  .portal-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .portal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .portal-desc {
+    font-size: 0.82rem;
+    color: #64748B;
+    line-height: 1.4;
+  }
+  body.dark-mode .portal-title { color: #F5F7F8; }
+  body.dark-mode .portal-desc { color: #8B98A3; }
+
+  .portal-arrow {
+    font-size: 1.2rem;
+    color: #CBD5E1;
+    transition: color 0.2s, transform 0.2s;
+  }
+  .portal-card-row:hover .portal-arrow {
+    color: var(--hv-teal);
+    transform: translateX(4px);
+  }
+  body.dark-mode .portal-arrow { color: #475569; }
+
+  @media (max-width: 992px) {
+    .auth-page-split { padding: 24px 16px; }
+    .auth-container-split { flex-direction: column; max-width: 500px; min-height: auto; }
+    .auth-left { width: 100%; padding: 40px 32px; }
+    .auth-right { width: 100%; padding: 40px 32px; border-top: 1px solid #E2E8F0; }
+    body.dark-mode .auth-right { border-top-color: #1A242E; }
+  }
+  @media (max-width: 480px) {
+    .auth-left { padding: 32px 20px; }
+    .auth-right { padding: 32px 20px; }
+    .portal-card-row { padding: 20px 16px; gap: 12px; }
+    .portal-icon-box { width: 44px; height: 44px; font-size: 1.2rem; }
+  }
+</style>
+
+<div class="auth-page-split">
+  <div class="auth-container-split">
+  
+    <!-- LEFT: WELCOME -->
+    <div class="auth-left">
+      <a href="/" style="display:inline-block;">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" class="auth-logo" alt="HealthVault logo">
+      </a>
+      
+      <div class="proto-notice">
+        <i class="bi bi-flask"></i> Fictional Prototype Demo
+      </div>
+      
+      <h1 class="auth-heading">Choose your portal</h1>
+      <p class="auth-subheading">Select how you are accessing HealthVault today. Each portal provides specialized tools for your unique healthcare role.</p>
+      
+      <div class="auth-divider">New to HealthVault?</div>
+      
+      <div class="auth-register-link">
+        <a href="{{ url_for('auth.register') }}">Register as a patient</a> to start organizing your medical records securely.
+      </div>
+      
+    </div>
+    
+    <!-- RIGHT: PORTAL CARDS -->
+    <div class="auth-right">
+      <div class="portal-options">
+      
+        <!-- Patient Portal -->
+        <a href="{{ url_for('auth.login', role='patient') }}" class="portal-card-row">
+          <div class="portal-icon-box">
+            <i class="bi bi-person-circle"></i>
+          </div>
+          <div class="portal-info">
+            <div class="portal-title">Patient Portal</div>
+            <div class="portal-desc">Access your timeline, lab reports, medications, and control doctor access.</div>
+          </div>
+          <i class="bi bi-arrow-right portal-arrow"></i>
+        </a>
+        
+        <!-- Doctor Portal -->
+        <a href="{{ url_for('auth.login', role='doctor') }}" class="portal-card-row">
+          <div class="portal-icon-box">
+            <i class="bi bi-heart-pulse-fill"></i>
+          </div>
+          <div class="portal-info">
+            <div class="portal-title">Doctor Portal</div>
+            <div class="portal-desc">Review patient records, add clinical notes, and manage consultation history.</div>
+          </div>
+          <i class="bi bi-arrow-right portal-arrow"></i>
+        </a>
+        
+        <!-- Lab Portal -->
+        <a href="{{ url_for('auth.login', role='lab') }}" class="portal-card-row">
+          <div class="portal-icon-box">
+            <i class="bi bi-bandaid-fill"></i>
+          </div>
+          <div class="portal-info">
+            <div class="portal-title">Lab Portal</div>
+            <div class="portal-desc">Upload diagnostic reports and enter structured test results directly.</div>
+          </div>
+          <i class="bi bi-arrow-right portal-arrow"></i>
+        </a>
+
+      </div>
+    </div>
+    
+  </div>
+</div>
+{% endblock %}

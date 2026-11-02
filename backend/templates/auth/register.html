@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% block title %}Create Account — HealthVault{% endblock %}
+
+{% block content %}
+<style>\n  /* Fix scrolling for public pages */\n  body { overflow-y: auto !important; height: auto !important; }
+  /* ── Auth page shell ── */
+  .auth-page {
+    min-height: calc(100vh - var(--hv-topbar-height, 60px));
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    background: var(--hv-bg);
+  }
+
+  /* ── Auth card ── */
+  .auth-card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--hv-surface);
+    border: 1px solid var(--hv-border);
+    border-radius: var(--hv-radius-xl);
+    box-shadow: var(--hv-shadow-md);
+    padding: 40px;
+  }
+
+  /* ── Branding ── */
+  .auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .auth-brand-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--hv-text-1);
+    letter-spacing: -0.02em;
+  }
+  .auth-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--hv-text-1);
+    text-align: center;
+    letter-spacing: -0.025em;
+    margin-bottom: 4px;
+  }
+  .auth-subtitle {
+    font-size: 0.82rem;
+    color: var(--hv-text-3);
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  /* ── Role tabs ── */
+  .role-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--hv-surface-2);
+    border-radius: var(--hv-radius);
+    padding: 5px;
+    margin-bottom: 28px;
+  }
+  .role-tab {
+    flex: 1;
+    padding: 9px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--hv-text-3);
+    background: transparent;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  }
+  .role-tab.active {
+    background: var(--hv-surface);
+    color: var(--hv-text-1);
+    box-shadow: var(--hv-shadow-sm);
+  }
+
+  /* ── Section divider ── */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 16px;
+    color: var(--hv-text-3);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--hv-border);
+  }
+
+  /* ── Form controls ── */
+  .auth-form-group { margin-bottom: 14px; }
+  .auth-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--hv-text-2);
+    margin-bottom: 5px;
+  }
+  .auth-input,
+  .auth-select {
+    width: 100%;
+    padding: 10px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--hv-border-strong);
+    background: var(--hv-surface-2);
+    color: var(--hv-text-1);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .auth-input::placeholder { color: var(--hv-text-3); }
+  .auth-input:focus,
+  .auth-select:focus {
+    border-color: var(--hv-teal);
+    background: var(--hv-surface);
+    box-shadow: 0 0 0 3px var(--hv-teal-light);
+  }
+  /* select arrow */
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '\F282';
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--hv-text-3);
+    pointer-events: none;
+    font-size: 0.85rem;
+  }
+
+  /* ── 2-column grid row ── */
+  .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 480px) { .form-row-2 { grid-template-columns: 1fr; } }
+
+  /* ── Primary button ── */
+  .btn-auth-primary {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    border: none;
+    border-radius: var(--hv-radius);
+    background: var(--hv-navy);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-auth-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  body.dark-mode .btn-auth-primary {
+    background: var(--hv-teal);
+    color: #0B0F12;
+  }
+
+  /* ── Footer links ── */
+  .auth-footer-text {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--hv-text-3);
+    margin-top: 20px;
+  }
+  .auth-footer-text a {
+    color: var(--hv-teal);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .auth-footer-text a:hover { text-decoration: underline; }
+  .auth-back-link {
+    display: block;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--hv-text-3);
+    text-decoration: none;
+    margin-top: 12px;
+    transition: color 0.2s;
+  }
+  .auth-back-link:hover { color: var(--hv-text-1); }
+
+  /* ── Role sections ── */
+  .role-section { display: none; }
+  .role-section.visible { display: block; }
+
+  /* ── HV ID notice ── */
+  .hvid-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--hv-teal-light);
+    border: 1px solid rgba(26,158,143,0.2);
+    border-radius: var(--hv-radius);
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    color: var(--hv-teal);
+    margin-bottom: 20px;
+  }
+  .hvid-notice i { font-size: 1rem; flex-shrink: 0; }
+</style>
+
+<div class="auth-page">
+  <div class="auth-card">
+
+    <!-- Branding -->
+    <div class="auth-brand">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" height="40" alt="HealthVault logo">
+      <span class="auth-brand-name">HealthVault</span>
+    </div>
+    <h1 class="auth-title">Create your HealthVault account</h1>
+    <p class="auth-subtitle">Join to access your complete health profile</p>
+
+    <!-- HV ID notice -->
+    <div class="hvid-notice">
+      <i class="bi bi-qr-code"></i>
+      You will receive a unique HealthVault ID upon registration.
+    </div>
+
+    <!-- Role tabs -->
+    <div class="role-tabs" id="roleTabs">
+      <button type="button" class="role-tab" id="tab-patient" onclick="setRole('patient')">
+        <i class="bi bi-person me-1"></i>Patient
+      </button>
+      <button type="button" class="role-tab" id="tab-doctor" onclick="setRole('doctor')">
+        <i class="bi bi-heart-pulse me-1"></i>Doctor
+      </button>
+      <button type="button" class="role-tab" id="tab-lab" onclick="setRole('lab')">
+        <i class="bi bi-eyedropper me-1"></i>Lab
+      </button>
+    </div>
+
+    <!-- Registration form -->
+    <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+      <input type="hidden" name="role" id="roleInput" value="{{ role }}">
+
+      <!-- Core fields -->
+      <div class="auth-form-group">
+        <label class="auth-label" for="reg-name">Full name</label>
+        <input id="reg-name" type="text" name="full_name" class="auth-input" placeholder="Jane Doe" autocomplete="name" required>
+      </div>
+      <div class="auth-form-group">
+        <label class="auth-label" for="reg-email">Email address</label>
+        <input id="reg-email" type="email" name="email" class="auth-input" placeholder="name@example.com" autocomplete="email" required>
+      </div>
+      <div class="form-row-2">
+        <div class="auth-form-group">
+          <label class="auth-label" for="reg-password">Password</label>
+          <input id="reg-password" type="password" name="password" class="auth-input" placeholder="Min. 8 characters" autocomplete="new-password" required>
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label" for="reg-confirm">Confirm password</label>
+          <input id="reg-confirm" type="password" name="confirm_password" class="auth-input" placeholder="Repeat password" autocomplete="new-password" required>
+        </div>
+      </div>
+
+      <!-- Patient-specific fields -->
+      <div id="section-patient" class="role-section">
+        <div class="section-divider">Patient details</div>
+        <div class="form-row-2">
+          <div class="auth-form-group">
+            <label class="auth-label" for="reg-dob">Date of birth</label>
+            <input id="reg-dob" type="date" name="date_of_birth" class="auth-input">
+          </div>
+          <div class="auth-form-group">
+            <label class="auth-label" for="reg-blood">Blood group</label>
+            <div class="select-wrap">
+              <select id="reg-blood" name="blood_group" class="auth-select">
+                <option value="">Select</option>
+                <option value="A+">A+</option>
+                <option value="A-">A−</option>
+                <option value="B+">B+</option>
+                <option value="B-">B−</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB−</option>
+                <option value="O+">O+</option>
+                <option value="O-">O−</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="auth-form-group">
+            <label class="auth-label" for="reg-sex">Biological sex</label>
+            <div class="select-wrap">
+              <select id="reg-sex" name="biological_sex" class="auth-select">
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="auth-form-group">
+            <label class="auth-label" for="reg-phone">Phone number</label>
+            <input id="reg-phone" type="tel" name="phone" class="auth-input" placeholder="+91 98765 43210" autocomplete="tel">
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctor-specific fields -->
+      <div id="section-doctor" class="role-section">
+        <div class="section-divider">Doctor details</div>
+        <div class="auth-form-group">
+          <label class="auth-label" for="reg-specialty">Specialty</label>
+          <input id="reg-specialty" type="text" name="specialty" class="auth-input" placeholder="e.g. Cardiology, Neurology">
+        </div>
+      </div>
+
+      <!-- Lab-specific fields -->
+      <div id="section-lab" class="role-section">
+        <div class="section-divider">Lab details</div>
+        <div class="auth-form-group">
+          <label class="auth-label" for="reg-labname">Lab name</label>
+          <input id="reg-labname" type="text" name="lab_name" class="auth-input" placeholder="e.g. City Diagnostics Pvt. Ltd.">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-auth-primary">Create Account</button>
+    </form>
+
+    <p class="auth-footer-text">
+      Already have an account?
+      <a href="{{ url_for('auth.login', role=role) }}" id="loginLink">Sign in</a>
+    </p>
+    <a href="{{ url_for('auth.portal_select') }}" class="auth-back-link">
+      <i class="bi bi-arrow-left me-1"></i>Back to portals
+    </a>
+
+  </div>
+</div>
+
+<script>
+function setRole(role) {
+  document.getElementById('roleInput').value = role;
+  ['patient', 'doctor', 'lab'].forEach(function(r) {
+    document.getElementById('tab-' + r).className =
+      'role-tab' + (r === role ? ' active' : '');
+  });
+  document.querySelectorAll('.role-section').forEach(function(s) {
+    s.classList.remove('visible');
+  });
+  document.getElementById('section-' + role).classList.add('visible');
+  document.getElementById('loginLink').href =
+    "{{ url_for('auth.login') }}?role=" + role;
+}
+setRole("{{ role }}" || "patient");
+</script>
+{% endblock %}

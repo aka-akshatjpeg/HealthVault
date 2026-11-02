@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+{% block title %}
+{% if role == 'patient' %}Patient Login
+{% elif role == 'doctor' %}Doctor Login
+{% elif role == 'lab' %}Lab Login
+{% else %}Sign In
+{% endif %} — HealthVault
+{% endblock %}
+
+{% block content %}
+<style>\n  /* Fix scrolling for public pages */\n  body { overflow-y: auto !important; height: auto !important; }
+  .auth-page-split {
+    min-height: calc(100vh - var(--hv-topbar-height, 60px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: linear-gradient(rgba(245, 247, 250, 0.85), rgba(245, 247, 250, 0.95)), url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?q=80&w=2000&auto=format&fit=crop') center/cover fixed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body.dark-mode .auth-page-split { background: linear-gradient(rgba(8, 13, 18, 0.9), rgba(8, 13, 18, 0.98)), url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?q=80&w=2000&auto=format&fit=crop') center/cover fixed; }
+
+  .auth-container-split {
+    display: flex;
+    width: 100%;
+    max-width: 1150px;
+    min-height: 700px;
+    background: #FFFFFF;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+  }
+  body.dark-mode .auth-container-split {
+    background: #10171D;
+    border-color: #1A242E;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  }
+
+  /* Left Column */
+  .auth-left {
+    width: 45%;
+    padding: 60px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .auth-logo { margin-bottom: 40px; height: 38px; }
+  
+  .auth-heading {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .auth-subheading {
+    font-size: 0.95rem;
+    color: #64748B;
+    margin-bottom: 40px;
+  }
+  body.dark-mode .auth-heading { color: #F5F7F8; }
+  body.dark-mode .auth-subheading { color: #8B98A3; }
+
+  .auth-form-group { margin-bottom: 20px; position: relative; }
+  .auth-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+  }
+  body.dark-mode .auth-label { color: #8B98A3; }
+
+  .auth-input {
+    width: 100%;
+    height: 50px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1px solid #D7DDE5;
+    background: #FFFFFF;
+    color: #0F172A;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+  }
+  .auth-input::placeholder { color: #94A3B8; }
+  .auth-input:focus {
+    border-color: var(--hv-teal);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+  }
+  body.dark-mode .auth-input {
+    background: #151E25;
+    border-color: #2A3642;
+    color: #F5F7F8;
+  }
+  body.dark-mode .auth-input:focus { border-color: var(--hv-teal); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.3); }
+
+  .password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 40px;
+    color: #94A3B8;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .password-toggle:hover { color: #475569; }
+  body.dark-mode .password-toggle:hover { color: #CBD5E1; }
+
+  .forgot-password {
+    display: block;
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--hv-teal);
+    font-weight: 500;
+    text-decoration: none;
+    margin-top: 8px;
+  }
+  .forgot-password:hover { text-decoration: underline; }
+
+  .btn-auth-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 50px;
+    margin-top: 24px;
+    border: none;
+    border-radius: 12px;
+    background: #0B172A;
+    color: #FFFFFF;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-auth-primary:hover { background: #1E293B; }
+  .btn-auth-primary:active { transform: scale(0.99); }
+  body.dark-mode .btn-auth-primary { background: var(--hv-teal); color: #080D12; }
+  body.dark-mode .btn-auth-primary:hover { background: #0E8074; }
+
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 32px 0;
+    color: #64748B;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .auth-divider::before, .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #E2E8F0;
+  }
+  body.dark-mode .auth-divider { color: #8B98A3; }
+  body.dark-mode .auth-divider::before, body.dark-mode .auth-divider::after { background: #1E293B; }
+
+  /* Demo account styling */
+  .demo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    background: #FFFFFF;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+    width: 100%;
+  }
+  .demo-row:hover { border-color: #CBD5E1; background: #F8FAFC; }
+  .demo-row i { font-size: 1.2rem; color: var(--hv-teal); }
+  .demo-row-info { display: flex; flex-direction: column; text-align: left; }
+  .demo-row-title { font-size: 0.85rem; font-weight: 600; color: #0F172A; }
+  .demo-row-email { font-size: 0.75rem; color: #64748B; }
+  
+  body.dark-mode .demo-row { background: #151E25; border-color: #2A3642; }
+  body.dark-mode .demo-row:hover { background: #1A242E; border-color: #3B4B5B; }
+  body.dark-mode .demo-row-title { color: #F5F7F8; }
+  body.dark-mode .demo-row-email { color: #8B98A3; }
+
+  .auth-register-link {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #64748B;
+    margin-top: 32px;
+  }
+  .auth-register-link a { color: var(--hv-teal); font-weight: 600; text-decoration: none; }
+  
+  .auth-back-link {
+    display: block;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #94A3B8;
+    text-decoration: none;
+    margin-top: 24px;
+    transition: color 0.15s;
+  }
+  .auth-back-link:hover { color: #475569; }
+  
+  /* Flash alerts */
+  .auth-alert { padding: 12px 16px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 24px; }
+  .auth-alert.danger { background: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+  .auth-alert.warning { background: #FFFBEB; color: #92400E; border: 1px solid #FCD34D; }
+  .auth-alert.success { background: #F0FDF4; color: #166534; border: 1px solid #86EFAC; }
+  .auth-alert.info { background: #EFF6FF; color: #1E40AF; border: 1px solid #93C5FD; }
+  
+  body.dark-mode .auth-alert.danger { background: rgba(153,27,27,0.1); border-color: rgba(153,27,27,0.3); color: #FCA5A5; }
+  body.dark-mode .auth-alert.warning { background: rgba(146,64,14,0.1); border-color: rgba(146,64,14,0.3); color: #FCD34D; }
+  body.dark-mode .auth-alert.success { background: rgba(22,101,52,0.1); border-color: rgba(22,101,52,0.3); color: #86EFAC; }
+  body.dark-mode .auth-alert.info { background: rgba(30,64,175,0.1); border-color: rgba(30,64,175,0.3); color: #93C5FD; }
+
+  /* Right Column */
+  .auth-right {
+    width: 55%;
+    background: #F3F8F7;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    overflow: hidden;
+  }
+  body.dark-mode .auth-right { background: #111B20; }
+  
+  .auth-visual-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Abstract Visual Elements */
+  .visual-circle {
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(13,148,136,0.12) 0%, rgba(13,148,136,0.02) 100%);
+    z-index: 1;
+  }
+  body.dark-mode .visual-circle { background: linear-gradient(135deg, rgba(13,148,136,0.15) 0%, rgba(13,148,136,0.02) 100%); }
+  
+  .visual-card-main {
+    position: relative;
+    z-index: 3;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+    width: 260px;
+    border: 1px solid rgba(255,255,255,0.5);
+  }
+  body.dark-mode .visual-card-main { background: #151E25; border: 1px solid #2A3642; box-shadow: 0 12px 32px rgba(0,0,0,0.2); }
+  
+  .visual-card-small-1, .visual-card-small-2 {
+    position: absolute;
+    z-index: 4;
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  body.dark-mode .visual-card-small-1, body.dark-mode .visual-card-small-2 { background: #1A242E; border: 1px solid #2A3642; }
+  
+  .visual-card-small-1 { top: 30px; left: 10px; animation: float1 6s ease-in-out infinite; }
+  .visual-card-small-2 { bottom: 50px; right: 10px; animation: float2 7s ease-in-out infinite; }
+  
+  @keyframes float1 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @keyframes float2 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+  
+  .auth-right-text {
+    text-align: center;
+    margin-top: 40px;
+    z-index: 2;
+  }
+  .auth-right-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .auth-right-subtitle {
+    font-size: 0.95rem;
+    color: #64748B;
+    max-width: 320px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  body.dark-mode .auth-right-title { color: #F5F7F8; }
+  body.dark-mode .auth-right-subtitle { color: #8B98A3; }
+  
+  @media (max-width: 992px) {
+    .auth-page-split { padding: 24px 16px; }
+    .auth-container-split { flex-direction: column; max-width: 480px; min-height: auto; }
+    .auth-left { width: 100%; padding: 40px 32px; }
+    .auth-right { width: 100%; padding: 40px 32px; border-top: 1px solid #E2E8F0; }
+    body.dark-mode .auth-right { border-top-color: #1A242E; }
+    .auth-visual-wrapper { height: 260px; }
+    .visual-circle { width: 220px; height: 220px; }
+  }
+  @media (max-width: 480px) {
+    .auth-left { padding: 32px 20px; }
+    .auth-right { padding: 32px 20px; }
+  }
+</style>
+
+<div class="auth-page-split">
+  <div class="auth-container-split">
+  
+    <!-- LEFT: LOGIN FORM -->
+    <div class="auth-left">
+      <a href="/" style="display:inline-block;">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" class="auth-logo" alt="HealthVault logo">
+      </a>
+      
+      <h1 class="auth-heading">Welcome back!</h1>
+      <p class="auth-subheading">Your health, organized and always with you.</p>
+      
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="auth-alert {{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      
+      <form method="POST" action="{{ url_for('auth.login', role=role) }}" novalidate>
+        <div class="auth-form-group">
+          <label class="auth-label" for="login-email">Email address</label>
+          <input id="login-email" type="email" class="auth-input" name="email" placeholder="name@example.com" autocomplete="email" required>
+        </div>
+        
+        <div class="auth-form-group" style="margin-bottom: 8px;">
+          <label class="auth-label" for="login-password">Password</label>
+          <input id="login-password" type="password" class="auth-input" name="password" placeholder="••••••••" autocomplete="current-password" required>
+          <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+        <a href="#" class="forgot-password">Forgot password?</a>
+        
+        <button type="submit" class="btn-auth-primary">Sign In</button>
+      </form>
+      
+      <div class="auth-divider">or continue with demo</div>
+      
+      <!-- DEMO ACCOUNTS -->
+      {% if role == 'patient' or not role %}
+      <form method="POST" action="{{ url_for('auth.login', role='patient') }}" style="margin:0;">
+        <input type="hidden" name="email" value="patient@demo.healthvault">
+        <input type="hidden" name="password" value="DemoPassword123!">
+        <button type="submit" class="demo-row">
+          <i class="bi bi-person-circle"></i>
+          <div class="demo-row-info">
+            <span class="demo-row-title">Patient Demo</span>
+            <span class="demo-row-email">patient@demo.healthvault</span>
+          </div>
+        </button>
+      </form>
+      {% endif %}
+
+      {% if role == 'doctor' or not role %}
+      <form method="POST" action="{{ url_for('auth.login', role='doctor') }}" style="margin:0;">
+        <input type="hidden" name="email" value="doctor@demo.healthvault">
+        <input type="hidden" name="password" value="DemoPassword123!">
+        <button type="submit" class="demo-row" style="{% if not role %}margin-top:12px;{% endif %}">
+          <i class="bi bi-heart-pulse-fill"></i>
+          <div class="demo-row-info">
+            <span class="demo-row-title">Doctor Demo</span>
+            <span class="demo-row-email">doctor@demo.healthvault</span>
+          </div>
+        </button>
+      </form>
+      {% endif %}
+
+      {% if role == 'lab' or not role %}
+      <form method="POST" action="{{ url_for('auth.login', role='lab') }}" style="margin:0;">
+        <input type="hidden" name="email" value="lab@demo.healthvault">
+        <input type="hidden" name="password" value="DemoPassword123!">
+        <button type="submit" class="demo-row" style="{% if not role %}margin-top:12px;{% endif %}">
+          <i class="bi bi-bandaid-fill"></i>
+          <div class="demo-row-info">
+            <span class="demo-row-title">Lab Demo</span>
+            <span class="demo-row-email">lab@demo.healthvault</span>
+          </div>
+        </button>
+      </form>
+      {% endif %}
+      
+      <div class="auth-register-link">
+        Not a member? <a href="{{ url_for('auth.register', role=role) }}">Register now</a>
+      </div>
+      
+      <a href="{{ url_for('auth.portal_select') }}" class="auth-back-link">&larr; Back to portals</a>
+    </div>
+    
+    <!-- RIGHT: VISUAL PANEL -->
+    <div class="auth-right">
+      <div class="auth-visual-wrapper">
+        <div class="visual-circle"></div>
+        
+        <!-- Floating Small Card 1 -->
+        <div class="visual-card-small-1">
+          <div style="width:36px; height:36px; border-radius:50%; background:rgba(13,148,136,0.1); display:flex; align-items:center; justify-content:center; color:var(--hv-teal); font-size:1.1rem;">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <div>
+            <div style="font-size:0.8rem; font-weight:700; color:var(--hv-text-1);">Secure Data</div>
+            <div style="font-size:0.7rem; color:var(--hv-text-3);">Encrypted</div>
+          </div>
+        </div>
+        
+        <!-- Main Mockup Card -->
+        <div class="visual-card-main">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+            <div style="width:40px; height:40px; background:var(--hv-navy); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff;">
+              <i class="bi bi-person-vcard"></i>
+            </div>
+            <div>
+              <div style="font-size:0.95rem; font-weight:700; color:var(--hv-text-1);">HealthVault ID</div>
+              <div style="font-size:0.75rem; color:var(--hv-teal); font-family:monospace;">HV23 4587 9102</div>
+            </div>
+          </div>
+          <div style="height:4px; width:100%; background:var(--hv-bg); border-radius:2px; margin-bottom:12px; overflow:hidden;">
+            <div style="height:100%; width:65%; background:var(--hv-teal); border-radius:2px;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--hv-text-3);">
+            <span>Profile Complete</span>
+            <span style="font-weight:600; color:var(--hv-text-1);">65%</span>
+          </div>
+        </div>
+        
+        <!-- Floating Small Card 2 -->
+        <div class="visual-card-small-2">
+          <div style="width:36px; height:36px; border-radius:50%; background:rgba(59,130,246,0.1); display:flex; align-items:center; justify-content:center; color:#3B82F6; font-size:1.1rem;">
+            <i class="bi bi-file-earmark-medical"></i>
+          </div>
+          <div>
+            <div style="font-size:0.8rem; font-weight:700; color:var(--hv-text-1);">Lab Report</div>
+            <div style="font-size:0.7rem; color:var(--hv-text-3);">Just added</div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <div class="auth-right-text">
+        <h2 class="auth-right-title">Your health.<br>In one secure place.</h2>
+        <p class="auth-right-subtitle">Your records, reports and health journey &mdash; always with you.</p>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#login-password');
+    
+    if (togglePassword && password) {
+        togglePassword.addEventListener('click', function (e) {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+        });
+    }
+});
+</script>
+{% endblock %}

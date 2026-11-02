@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}Upload Lab Report — HealthVault{% endblock %}
+{% block content %}
+
+<div style="max-width:760px;">
+
+  <!-- Page Header -->
+  <div class="page-header" style="margin-bottom:24px;">
+    <div>
+      <a href="{{ url_for('lab.dashboard') }}" style="display:inline-flex; align-items:center; gap:6px; color:var(--hv-text-2); font-size:0.88rem; text-decoration:none; margin-bottom:10px;">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+      <h1 class="page-title">Upload Lab Report</h1>
+      <p class="page-subtitle">Find the patient by HealthVault ID, then fill in the report details.</p>
+    </div>
+  </div>
+
+  <!-- Step 1: Find Patient -->
+  <div class="hv-card" style="margin-bottom:20px;">
+    <div class="hv-card-header" style="display:flex; align-items:center; gap:10px;">
+      <span style="width:24px; height:24px; border-radius:50%; background:var(--hv-teal); color:#fff; font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">1</span>
+      <h2 class="hv-card-title" style="margin:0;">Find Patient</h2>
+    </div>
+    <div class="hv-card-body">
+      <form method="GET" action="{{ url_for('lab.add_report') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+          <label for="search_query" class="hv-label" style="display:block; margin-bottom:6px;">HealthVault ID / Aadhaar Number</label>
+          <input
+            id="search_query"
+            type="text"
+            name="search_query"
+            placeholder="HV-XXXXX or 12-digit Aadhaar"
+            value="{{ search_query or hv_id or aadhaar or '' }}"
+            autocomplete="off"
+            style="width:100%; box-sizing:border-box; padding:11px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.95rem; letter-spacing:0.04em;"
+          >
+        </div>
+        <button type="submit" class="btn btn-secondary" style="flex-shrink:0;">
+          <i class="bi bi-search" style="margin-right:6px;"></i>Search
+        </button>
+      </form>
+
+      {% if error %}
+      <div style="display:flex; align-items:flex-start; gap:10px; padding:11px 14px; margin-top:14px; background:var(--hv-red-light); border:1px solid var(--hv-red); border-radius:var(--hv-radius); color:var(--hv-red);">
+        <i class="bi bi-exclamation-circle-fill" style="margin-top:2px; flex-shrink:0;"></i>
+        <span style="font-size:0.9rem;">{{ error }}</span>
+      </div>
+      {% endif %}
+
+      {% if patient %}
+      <div style="display:flex; align-items:center; gap:14px; margin-top:16px; padding:14px 16px; background:var(--hv-teal-light); border:1px solid var(--hv-teal-medium); border-radius:var(--hv-radius);">
+        <div style="width:38px; height:38px; border-radius:50%; background:var(--hv-surface); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <i class="bi bi-person-check" style="font-size:1rem; color:var(--hv-teal);"></i>
+        </div>
+        <div>
+          <p style="margin:0; font-weight:600; color:var(--hv-text-1);">{{ patient.full_name }}</p>
+          <p style="margin:0; font-size:0.82rem; font-family:monospace; color:var(--hv-teal);">{% if patient.health_identity %}{{ patient.health_identity.hv_id }}{% endif %}</p>
+        </div>
+        <span class="badge status-active" style="margin-left:auto;">Found</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Step 2: Report Details (only if patient found) -->
+  {% if patient %}
+  <div class="hv-card reveal">
+    <div class="hv-card-header" style="display:flex; align-items:center; gap:10px;">
+      <span style="width:24px; height:24px; border-radius:50%; background:var(--hv-teal); color:#fff; font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">2</span>
+      <h2 class="hv-card-title" style="margin:0;">Report Details</h2>
+    </div>
+    <div class="hv-card-body">
+      <form method="POST" action="{{ url_for('lab.add_report') }}" style="display:flex; flex-direction:column; gap:20px;">
+        {{ csrf_token() if csrf_token is defined }}
+        <input type="hidden" name="patient_id" value="{{ patient.id }}">
+        <input type="hidden" name="hv_id" value="{{ hv_id }}">
+      <input type="hidden" name="search_query" value="{{ search_query }}">
+      <input type="hidden" name="aadhaar" value="{{ aadhaar }}">
+
+        <!-- Report Name & Date -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div>
+            <label for="report_name" class="hv-label" style="display:block; margin-bottom:6px;">
+              Report Name <span style="color:var(--hv-red);">*</span>
+            </label>
+            <input
+              id="report_name"
+              type="text"
+              name="report_name"
+              required
+              placeholder="e.g. Complete Blood Count"
+              style="width:100%; box-sizing:border-box; padding:11px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.92rem;"
+            >
+          </div>
+          <div>
+            <label for="report_date" class="hv-label" style="display:block; margin-bottom:6px;">
+              Report Date <span style="color:var(--hv-red);">*</span>
+            </label>
+            <input
+              id="report_date"
+              type="date"
+              name="report_date"
+              required
+              style="width:100%; box-sizing:border-box; padding:11px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.92rem;"
+            >
+          </div>
+        </div>
+
+        <!-- Ordering Doctor -->
+        <div>
+          <label for="ordering_doctor" class="hv-label" style="display:block; margin-bottom:6px;">Ordering Doctor</label>
+          <input
+            id="ordering_doctor"
+            type="text"
+            name="ordering_doctor"
+            placeholder="Dr. Name"
+            style="width:100%; box-sizing:border-box; padding:11px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.92rem;"
+          >
+        </div>
+
+        <!-- Summary -->
+        <div>
+          <label for="summary" class="hv-label" style="display:block; margin-bottom:6px;">Summary / Remarks</label>
+          <textarea
+            id="summary"
+            name="summary"
+            rows="3"
+            placeholder="Optional clinical summary or remarks…"
+            style="width:100%; box-sizing:border-box; padding:11px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.92rem; resize:vertical; font-family:inherit;"
+          ></textarea>
+        </div>
+
+        <div class="hv-divider"></div>
+
+        <!-- Test Results -->
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+            <p class="hv-label" style="margin:0;">Test Results</p>
+            <button type="button" id="addTestRow" class="btn btn-sm btn-ghost">
+              <i class="bi bi-plus-circle" style="margin-right:4px;"></i>Add Test Row
+            </button>
+          </div>
+
+          <!-- Column Headers -->
+          <div style="display:grid; grid-template-columns:2fr 1.2fr 0.8fr 1.4fr 80px; gap:8px; margin-bottom:6px; padding:0 4px;">
+            <span class="hv-label">Test Name</span>
+            <span class="hv-label">Value</span>
+            <span class="hv-label">Unit</span>
+            <span class="hv-label">Ref. Range</span>
+            <span class="hv-label" style="text-align:center;">Abnormal</span>
+          </div>
+
+          <!-- Rows Container -->
+          <div id="testRowsContainer" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Initial Row -->
+            <div class="test-row" style="display:grid; grid-template-columns:2fr 1.2fr 0.8fr 1.4fr 80px; gap:8px; align-items:center;">
+              <input type="text"    name="test_name[]"     placeholder="e.g. Haemoglobin"  class="test-input" style="padding:9px 12px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.88rem; width:100%; box-sizing:border-box;">
+              <input type="text"    name="test_value[]"    placeholder="12.5"              class="test-input" style="padding:9px 12px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.88rem; width:100%; box-sizing:border-box;">
+              <input type="text"    name="test_unit[]"     placeholder="g/dL"              class="test-input" style="padding:9px 12px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.88rem; width:100%; box-sizing:border-box;">
+              <input type="text"    name="test_range[]"    placeholder="13.0–17.0"         class="test-input" style="padding:9px 12px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.88rem; width:100%; box-sizing:border-box;">
+              <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                <input type="checkbox" name="test_abnormal[]" value="1" style="width:16px; height:16px; accent-color:var(--hv-red);">
+                <button type="button" class="remove-row btn btn-sm btn-ghost" style="padding:4px 8px; display:none;" title="Remove row">
+                  <i class="bi bi-trash3" style="color:var(--hv-red);"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hv-divider"></div>
+
+        <!-- Submit -->
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="btn btn-teal btn-lg">
+            <i class="bi bi-cloud-upload" style="margin-right:8px;"></i>Upload Report
+          </button>
+          <a href="{{ url_for('lab.dashboard') }}" class="btn btn-secondary btn-lg">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+(function () {
+  const container = document.getElementById('testRowsContainer');
+  const addBtn    = document.getElementById('addTestRow');
+  if (!addBtn || !container) return;
+
+  const inputStyle = 'padding:9px 12px; border-radius:var(--hv-radius,12px); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.88rem; width:100%; box-sizing:border-box;';
+  const rowStyle   = 'display:grid; grid-template-columns:2fr 1.2fr 0.8fr 1.4fr 80px; gap:8px; align-items:center;';
+
+  function updateRemoveButtons() {
+    const rows = container.querySelectorAll('.test-row');
+    rows.forEach(row => {
+      const btn = row.querySelector('.remove-row');
+      if (btn) btn.style.display = rows.length > 1 ? 'inline-flex' : 'none';
+    });
+  }
+
+  function addRow() {
+    const row = document.createElement('div');
+    row.className = 'test-row';
+    row.style.cssText = rowStyle;
+    row.innerHTML = `
+      <input type="text"     name="test_name[]"     placeholder="Test name"   style="${inputStyle}">
+      <input type="text"     name="test_value[]"    placeholder="Value"       style="${inputStyle}">
+      <input type="text"     name="test_unit[]"     placeholder="Unit"        style="${inputStyle}">
+      <input type="text"     name="test_range[]"    placeholder="Ref. range"  style="${inputStyle}">
+      <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+        <input type="checkbox" name="test_abnormal[]" value="1" style="width:16px;height:16px;accent-color:var(--hv-red);">
+        <button type="button" class="remove-row btn btn-sm btn-ghost" style="padding:4px 8px;" title="Remove">
+          <i class="bi bi-trash3" style="color:var(--hv-red);"></i>
+        </button>
+      </div>
+    `;
+    row.querySelector('.remove-row').addEventListener('click', function () {
+      row.remove();
+      updateRemoveButtons();
+    });
+    container.appendChild(row);
+    updateRemoveButtons();
+  }
+
+  addBtn.addEventListener('click', addRow);
+
+  // Wire remove on initial row
+  container.querySelectorAll('.remove-row').forEach(btn => {
+    btn.addEventListener('click', function () {
+      btn.closest('.test-row').remove();
+      updateRemoveButtons();
+    });
+  });
+
+  updateRemoveButtons();
+})();
+</script>
+
+{% endblock %}

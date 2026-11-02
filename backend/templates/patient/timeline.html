@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% block title %}Health Timeline — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+/* ── Timeline Page ────────────────────────────────────────────────────── */
+.timeline-filter-bar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--hv-surface-2);
+    border-radius: var(--hv-radius);
+    border: 1px solid var(--hv-border);
+    flex-wrap: wrap;
+}
+.timeline-filter-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: calc(var(--hv-radius) - 4px);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--hv-text-2);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+.timeline-filter-tab:hover {
+    background: var(--hv-surface-3);
+    color: var(--hv-text-1);
+}
+.timeline-filter-tab.active {
+    background: var(--hv-surface);
+    color: var(--hv-teal);
+    box-shadow: var(--hv-shadow-sm);
+    font-weight: 600;
+}
+.timeline-filter-tab i { font-size: 0.875rem; }
+
+/* ── Year Divider ─────────────────────────────────────────────────────── */
+.timeline-year-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 32px 0 4px;
+}
+.timeline-year-header:first-child { margin-top: 0; }
+.timeline-year-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hv-text-3);
+    white-space: nowrap;
+}
+.timeline-year-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--hv-border);
+}
+
+/* ── Timeline ─────────────────────────────────────────────────────────── */
+.hv-timeline { position: relative; }
+
+.hv-timeline-item {
+    display: flex;
+    gap: 0;
+    position: relative;
+}
+
+.hv-timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    padding-top: 2px;
+}
+
+.hv-timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--hv-teal);
+    background: var(--hv-surface);
+    flex-shrink: 0;
+    z-index: 1;
+    transition: background 0.2s;
+}
+.hv-timeline-item:hover .hv-timeline-dot { background: var(--hv-teal); }
+.hv-timeline-dot.dot-muted {
+    border-color: var(--hv-border-strong);
+}
+.hv-timeline-item:hover .hv-timeline-dot.dot-muted { background: var(--hv-border-strong); }
+
+.hv-timeline-line {
+    flex: 1;
+    width: 1px;
+    background: var(--hv-border);
+    margin-top: 4px;
+}
+.hv-timeline-item:last-child .hv-timeline-line { display: none; }
+
+.hv-timeline-content {
+    flex: 1;
+    padding-bottom: 28px;
+    padding-left: 4px;
+    min-width: 0;
+}
+
+/* ── Timeline Card ────────────────────────────────────────────────────── */
+.timeline-card {
+    background: var(--hv-surface);
+    border: 1px solid var(--hv-border);
+    border-radius: var(--hv-radius);
+    padding: 16px 20px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.timeline-card:hover {
+    border-color: var(--hv-border-strong);
+    box-shadow: var(--hv-shadow-sm);
+}
+
+.timeline-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.timeline-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.timeline-date {
+    font-size: 0.75rem;
+    color: var(--hv-text-3);
+    font-weight: 500;
+}
+
+.timeline-card-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--hv-text-1);
+    margin: 0 0 4px;
+    line-height: 1.3;
+}
+
+.timeline-card-desc {
+    font-size: 0.8125rem;
+    color: var(--hv-text-2);
+    margin: 0;
+    line-height: 1.55;
+}
+
+.timeline-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--hv-border);
+}
+
+.timeline-source {
+    font-size: 0.75rem;
+    color: var(--hv-text-3);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.timeline-link {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--hv-teal);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.15s;
+}
+.timeline-link:hover { opacity: 0.75; color: var(--hv-teal); }
+
+/* ── Type badge colours ──────────────────────────────────────────────── */
+.tl-badge-lab        { background: var(--hv-blue-light);   color: var(--hv-blue);  }
+.tl-badge-medication { background: var(--hv-teal-light);   color: var(--hv-teal);  }
+.tl-badge-encounter  { background: var(--hv-green-light);  color: var(--hv-green); }
+.tl-badge-procedure  { background: var(--hv-amber-light);  color: var(--hv-amber); }
+.tl-badge-vaccination{ background: rgba(139,92,246,0.1);   color: #7c3aed;         }
+.tl-badge-default    { background: var(--hv-surface-3);    color: var(--hv-text-2);}
+
+/* ── Empty State ─────────────────────────────────────────────────────── */
+.timeline-empty {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--hv-text-3);
+}
+.timeline-empty-icon {
+    font-size: 2.5rem;
+    color: var(--hv-border-strong);
+    margin-bottom: 16px;
+    display: block;
+}
+.timeline-empty h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--hv-text-2);
+    margin-bottom: 6px;
+}
+.timeline-empty p { font-size: 0.875rem; margin: 0; }
+</style>
+
+<!-- Page Header -->
+<div class="page-header mb-5">
+    <div>
+        <h1 class="page-title">Health Timeline</h1>
+        <p class="page-subtitle">Your complete medical history, all in one place.</p>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="mb-5">
+    <div class="timeline-filter-bar">
+        <a href="{{ url_for('patient.timeline') }}"
+           class="timeline-filter-tab {% if not filter_type or filter_type == 'all' %}active{% endif %}">
+            <i class="bi bi-grid-3x3-gap"></i> All
+        </a>
+        <a href="{{ url_for('patient.timeline') }}?filter=lab_report"
+           class="timeline-filter-tab {% if filter_type == 'lab_report' %}active{% endif %}">
+            <i class="bi bi-file-text"></i> Lab Reports
+        </a>
+        <a href="{{ url_for('patient.timeline') }}?filter=medication"
+           class="timeline-filter-tab {% if filter_type == 'medication' %}active{% endif %}">
+            <i class="bi bi-capsule"></i> Medications
+        </a>
+        <a href="{{ url_for('patient.timeline') }}?filter=encounter"
+           class="timeline-filter-tab {% if filter_type == 'encounter' %}active{% endif %}">
+            <i class="bi bi-person-badge"></i> Encounters
+        </a>
+        <a href="{{ url_for('patient.timeline') }}?filter=procedure"
+           class="timeline-filter-tab {% if filter_type == 'procedure' %}active{% endif %}">
+            <i class="bi bi-scissors"></i> Procedures
+        </a>
+        <a href="{{ url_for('patient.timeline') }}?filter=vaccination"
+           class="timeline-filter-tab {% if filter_type == 'vaccination' %}active{% endif %}">
+            <i class="bi bi-syringe"></i> Vaccinations
+        </a>
+    </div>
+</div>
+
+<!-- Timeline -->
+{% if timeline_items %}
+    {% set ns = namespace(current_year=None) %}
+    <div class="hv-timeline">
+        {% for item in timeline_items %}
+            {# ── Year group header ── #}
+            {% set item_year = item.date.strftime('%Y') if item.date else 'Unknown' %}
+            {% if item_year != ns.current_year %}
+                {% set ns.current_year = item_year %}
+                <div class="timeline-year-header">
+                    <span class="timeline-year-label">{{ item_year }}</span>
+                    <div class="timeline-year-rule"></div>
+                </div>
+            {% endif %}
+
+            {# ── Determine dot style and badge class ── #}
+            {% set is_recent = (item.date and (now.year - item.date.year) < 2) if item.date else false %}
+            {% set type_lower = (item.type | lower | replace(' ', '_')) if item.type else 'default' %}
+            {% if type_lower in ['lab_report', 'lab report', 'report'] %}
+                {% set badge_cls = 'tl-badge-lab' %}
+                {% set type_icon = 'bi-file-text' %}
+            {% elif type_lower in ['medication', 'prescription'] %}
+                {% set badge_cls = 'tl-badge-medication' %}
+                {% set type_icon = 'bi-capsule' %}
+            {% elif type_lower in ['encounter', 'visit', 'consultation'] %}
+                {% set badge_cls = 'tl-badge-encounter' %}
+                {% set type_icon = 'bi-person-badge' %}
+            {% elif type_lower in ['procedure', 'surgery'] %}
+                {% set badge_cls = 'tl-badge-procedure' %}
+                {% set type_icon = 'bi-scissors' %}
+            {% elif type_lower in ['vaccination', 'vaccine', 'immunization'] %}
+                {% set badge_cls = 'tl-badge-vaccination' %}
+                {% set type_icon = 'bi-syringe' %}
+            {% else %}
+                {% set badge_cls = 'tl-badge-default' %}
+                {% set type_icon = 'bi-clock-history' %}
+            {% endif %}
+
+            <div class="hv-timeline-item reveal">
+                <!-- Marker -->
+                <div class="hv-timeline-marker">
+                    <div class="hv-timeline-dot {% if not is_recent %}dot-muted{% endif %}"></div>
+                    <div class="hv-timeline-line"></div>
+                </div>
+
+                <!-- Content -->
+                <div class="hv-timeline-content">
+                    <div class="timeline-card">
+                        <div class="timeline-card-top">
+                            <div class="timeline-card-meta">
+                                <span class="badge {{ badge_cls }}" style="font-size:0.7rem; font-weight:600; padding: 3px 8px; border-radius: var(--hv-radius-pill);">
+                                    <i class="bi {{ type_icon }} me-1"></i>{{ item.type }}
+                                </span>
+                                <span class="timeline-date">
+                                    {{ item.date.strftime('%d %b %Y') if item.date else 'Unknown Date' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <h3 class="timeline-card-title">{{ item.title }}</h3>
+
+                        {% if item.summary %}
+                        <p class="timeline-card-desc">{{ item.summary }}</p>
+                        {% endif %}
+
+                        {% if item.organization or item.link %}
+                        <div class="timeline-card-footer">
+                            <span class="timeline-source">
+                                {% if item.organization %}
+                                <i class="bi bi-building"></i>
+                                {{ item.organization }}
+                                {% endif %}
+                            </span>
+                            {% if item.link %}
+                            <a href="{{ item.link }}" class="timeline-link">
+                                View record <i class="bi bi-arrow-right"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+{% else %}
+    <!-- Empty State -->
+    <div class="timeline-empty">
+        <i class="bi bi-clock-history timeline-empty-icon"></i>
+        <h3>No events found</h3>
+        <p>
+            {% if filter_type and filter_type != 'all' %}
+                No <strong>{{ filter_type | replace('_', ' ') }}</strong> records in your timeline yet.
+                <a href="{{ url_for('patient.timeline') }}" class="text-teal ms-1">View all events</a>
+            {% else %}
+                Your health events will appear here as your records are added.
+            {% endif %}
+        </p>
+    </div>
+{% endif %}
+
+{% endblock %}

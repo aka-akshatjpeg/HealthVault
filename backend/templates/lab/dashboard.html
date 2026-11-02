@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Lab Dashboard  HealthVault{% endblock %}
+{% block content %}
+
+<div class="bento-grid">
+
+    <!-- Hero Greeting Widget -->
+    <div class="bento-widget bento-wide reveal" style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 4px;">Diagnostic Center Portal</p>
+            <h1 style="font-size: 2.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">{{ provider.organization.name if provider.organization else 'Independent Lab' }}</h1>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;">
+                    <i class="bi bi-person me-1" style="color: #0d9488;"></i>{{ provider.full_name }}
+                </span>
+                <span style="color: var(--text-secondary); font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 12px; border-radius: 999px;">
+                    <i class="bi bi-calendar3 me-1"></i>{{ now.strftime('%d %B %Y') }}
+                </span>
+            </div>
+        </div>
+        <div style="font-size: 3rem; color: #0ea5e9; opacity: 0.8;">
+            <i class="bi bi-hospital"></i>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="bento-widget reveal" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <h4 style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem;">Total Reports</h4>
+        <div style="font-size: 3rem; font-weight: 800; color: var(--text-primary); line-height: 1;">{{ total_reports }}</div>
+    </div>
+    
+    <div class="bento-widget reveal" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <h4 style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem;">Added Today</h4>
+        <div style="font-size: 3rem; font-weight: 800; color: #10b981; line-height: 1;">{{ reports_today | default('0') }}</div>
+    </div>
+    
+    <div class="bento-widget reveal" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <h4 style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem;">This Week</h4>
+        <div style="font-size: 3rem; font-weight: 800; color: #f59e0b; line-height: 1;">{{ reports_this_week | default('0') }}</div>
+    </div>
+
+    <div class="bento-widget reveal" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <h4 style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem;">This Month</h4>
+        <div style="font-size: 3rem; font-weight: 800; color: #3b82f6; line-height: 1;">{{ reports_this_month | default('0') }}</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bento-widget bento-wide reveal" style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary);">
+        <a href="{{ url_for('lab.add_report') }}" class="btn btn-teal" style="padding: 12px 32px; font-size: 1.1rem; border-radius: 999px;">
+            <i class="bi bi-plus-circle-fill me-2"></i> Upload New Lab Report
+        </a>
+    </div>
+
+    <!-- Recent Reports List -->
+    <div class="bento-widget bento-wide reveal" style="grid-column: 1 / -1;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 style="font-weight: 600; font-size: 1.2rem; color: var(--text-primary); margin: 0;">Recent Uploads</h4>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table align-middle" style="color: var(--text-primary); margin: 0;">
+                <thead style="border-bottom: 2px solid var(--border-color);">
+                    <tr>
+                        <th style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; padding-bottom: 12px; border: none;">Report Name</th>
+                        <th style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; padding-bottom: 12px; border: none;">Patient</th>
+                        <th style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; padding-bottom: 12px; border: none;">Status</th>
+                        <th style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; padding-bottom: 12px; border: none;">Date</th>
+                    </tr>
+                </thead>
+                <tbody style="border-top: none;">
+                    {% for r in recent_reports %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 16px 0; font-weight: 600;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-file-earmark-medical" style="color: #0ea5e9;"></i>
+                                {{ r.report_name }}
+                            </div>
+                        </td>
+                        <td style="padding: 16px 0;">
+                            {% if r.patient %}
+                                <div style="font-weight: 500;">{{ r.patient.full_name }}</div>
+                                <div style="font-size: 0.8rem; font-family: monospace; color: var(--text-secondary);">{{ r.patient.health_identity.hv_id }}</div>
+                            {% else %}
+                                <em style="color: var(--text-secondary);">Unlinked</em>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 16px 0;">
+                            {% if r.status == 'completed' or r.status == 'final' %}
+                            <span class="badge status-active">Final</span>
+                            {% elif r.status == 'pending' %}
+                            <span class="badge status-warning">Pending</span>
+                            {% else %}
+                            <span class="badge status-neutral">{{ r.status|capitalize }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 16px 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            {{ r.report_date.strftime('%d %b %Y') }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 48px 24px; color: var(--text-secondary); border: none;">
+                            <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 12px;"></i>
+                            <p style="margin: 0; font-weight: 500;">No reports uploaded yet.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

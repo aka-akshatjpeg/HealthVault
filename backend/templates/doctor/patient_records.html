@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}{{ patient.full_name }} — Records — HealthVault{% endblock %}
+{% block content %}
+
+<!-- Back Link -->
+<div style="margin-bottom:20px;">
+  <a href="{{ url_for('doctor.dashboard') }}" style="display:inline-flex; align-items:center; gap:6px; color:var(--hv-text-2); font-size:0.9rem; text-decoration:none;">
+    <i class="bi bi-arrow-left"></i> Back to Dashboard
+  </a>
+</div>
+
+<!-- Patient Info Header -->
+<div class="page-header" style="margin-bottom:16px;">
+  <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+    <div style="width:52px; height:52px; border-radius:50%; background:var(--hv-teal-light); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <i class="bi bi-person" style="font-size:1.4rem; color:var(--hv-teal);"></i>
+    </div>
+    <div>
+      <h1 class="page-title" style="margin-bottom:2px;">{{ patient.full_name }}</h1>
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <span style="font-family:monospace; font-size:0.9rem; color:var(--hv-teal);">{% if patient.health_identity %}{{ patient.health_identity.hv_id }}{% endif %}</span>
+        {% if patient.blood_group %}
+        <span style="display:flex; align-items:center; gap:4px; font-size:0.85rem; color:var(--hv-text-2);">
+          <i class="bi bi-droplet-fill" style="color:var(--hv-red);"></i>{{ patient.blood_group }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Authorized Access Banner -->
+<div style="display:flex; align-items:flex-start; gap:12px; padding:14px 20px; background:var(--hv-teal-light); border:1px solid var(--hv-teal-medium); border-radius:var(--hv-radius); margin-bottom:24px; flex-wrap:wrap;">
+  <i class="bi bi-shield-check" style="color:var(--hv-teal); font-size:1.1rem; margin-top:1px; flex-shrink:0;"></i>
+  <div style="flex:1;">
+    <p style="margin:0 0 4px; font-weight:600; color:var(--hv-teal);">
+      Authorized access until {{ access_request.expires_at.strftime('%d %b %Y, %H:%M') if access_request.expires_at else 'N/A' }}
+    </p>
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+      {% for cat in approved_cats %}
+      <span class="badge status-info" style="font-size:0.72rem;">{{ cat }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Records Sections -->
+<div style="display:flex; flex-direction:column; gap:20px;">
+
+  <!-- Lab Reports -->
+  {% if 'Lab Reports' in approved_cats %}
+  <div class="hv-card">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-file-medical text-teal" style="margin-right:8px;"></i>Lab Reports
+      </h2>
+    </div>
+    <div class="hv-card-body" style="padding:0;">
+      {% if records.get('lab_reports') %}
+      <div style="overflow-x:auto;">
+        <table class="table" style="margin:0;">
+          <thead>
+            <tr>
+              <th>Report Name</th>
+              <th>Date</th>
+              <th>Lab</th>
+              <th style="text-align:right;">Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report in records['lab_reports'] %}
+            <tr>
+              <td style="font-weight:500; color:var(--hv-text-1);">{{ report.name }}</td>
+              <td style="color:var(--hv-text-3); font-size:0.85rem;">
+                {{ report.date.strftime('%d %b %Y') if report.date else '—' }}
+              </td>
+              <td style="color:var(--hv-text-2);">{{ report.lab or '—' }}</td>
+              <td style="text-align:right;">
+                <a href="{{ url_for('doctor.view_report', report_id=report.id) }}" class="btn btn-sm btn-ghost">
+                  <i class="bi bi-eye" style="margin-right:4px;"></i>View
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="padding:32px 24px; text-align:center; color:var(--hv-text-3);">No lab reports available.</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Medications -->
+  {% if 'Medications' in approved_cats %}
+  <div class="hv-card">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-capsule text-teal" style="margin-right:8px;"></i>Medications
+      </h2>
+    </div>
+    <div class="hv-card-body">
+      {% if records.get('medications') %}
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for med in records['medications'] %}
+        <div class="record-row">
+          <div class="record-row-icon"><i class="bi bi-capsule"></i></div>
+          <div class="record-row-body">
+            <p class="record-row-title">{{ med.name }}</p>
+            <p class="record-row-meta">{{ med.dosage or '' }}{% if med.frequency %} &middot; {{ med.frequency }}{% endif %}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--hv-text-3); margin:0;">No medications on record.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Allergies -->
+  {% if 'Allergies' in approved_cats %}
+  <div class="hv-card">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-exclamation-triangle text-teal" style="margin-right:8px;"></i>Allergies
+      </h2>
+    </div>
+    <div class="hv-card-body">
+      {% if records.get('allergies') %}
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        {% for allergy in records['allergies'] %}
+        <span class="badge status-danger" style="font-size:0.82rem; padding:5px 12px;">
+          <i class="bi bi-exclamation-circle" style="margin-right:4px;"></i>{{ allergy.name }}
+        </span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--hv-text-3); margin:0;">No allergies recorded.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Conditions -->
+  {% if 'Conditions' in approved_cats %}
+  <div class="hv-card">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-heart-pulse text-teal" style="margin-right:8px;"></i>Conditions
+      </h2>
+    </div>
+    <div class="hv-card-body">
+      {% if records.get('conditions') %}
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for cond in records['conditions'] %}
+        <div class="record-row">
+          <div class="record-row-icon"><i class="bi bi-heart-pulse"></i></div>
+          <div class="record-row-body">
+            <p class="record-row-title">{{ cond.name }}</p>
+            <p class="record-row-meta">{{ cond.status or '' }}{% if cond.onset %} &middot; Since {{ cond.onset }}{% endif %}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--hv-text-3); margin:0;">No conditions on record.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Vaccinations -->
+  {% if 'Vaccinations' in approved_cats %}
+  <div class="hv-card">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-shield-plus text-teal" style="margin-right:8px;"></i>Vaccinations
+      </h2>
+    </div>
+    <div class="hv-card-body">
+      {% if records.get('vaccinations') %}
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for vac in records['vaccinations'] %}
+        <div class="record-row">
+          <div class="record-row-icon"><i class="bi bi-shield-plus"></i></div>
+          <div class="record-row-body">
+            <p class="record-row-title">{{ vac.name }}</p>
+            <p class="record-row-meta">{{ vac.date.strftime('%d %b %Y') if vac.date else '' }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--hv-text-3); margin:0;">No vaccinations on record.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Encounters -->
+  {% if 'Encounters' in approved_cats %}
+  <div class="hv-card">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-hospital text-teal" style="margin-right:8px;"></i>Encounters
+      </h2>
+    </div>
+    <div class="hv-card-body">
+      {% if records.get('encounters') %}
+      <div class="hv-timeline">
+        {% for enc in records['encounters'] %}
+        <div class="hv-timeline-item">
+          <div class="hv-timeline-marker">
+            <div class="hv-timeline-dot"></div>
+            <div class="hv-timeline-line"></div>
+          </div>
+          <div class="hv-timeline-content">
+            <p style="font-weight:600; color:var(--hv-text-1); margin:0 0 2px;">{{ enc.type or 'Encounter' }}</p>
+            <p style="font-size:0.82rem; color:var(--hv-text-3); margin:0 0 4px;">
+              {{ enc.date.strftime('%d %b %Y') if enc.date else '—' }}
+            </p>
+            {% if enc.notes %}<p style="font-size:0.88rem; color:var(--hv-text-2); margin:0;">{{ enc.notes }}</p>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--hv-text-3); margin:0;">No encounters on record.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Add Consultation -->
+<div style="margin-top:28px; padding-top:20px; border-top:1px solid var(--hv-border);">
+  <a href="{{ url_for('doctor.add_consultation', patient_id=patient.id) }}" class="btn btn-teal btn-lg">
+    <i class="bi bi-plus-circle" style="margin-right:8px;"></i>Add Consultation
+  </a>
+</div>
+
+{% endblock %}

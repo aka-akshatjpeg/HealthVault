@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Consultation Record for {{ patient.full_name }}</h2>
+    <div class="card mt-4 shadow-sm">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3"><label class="form-label">Symptoms/Reason for Visit</label><textarea name="reason_for_visit" class="form-control" rows="3" required></textarea></div>
+                <div class="mb-3"><label class="form-label">Diagnosis</label><input type="text" name="diagnosis" class="form-control"></div>
+                <div class="mb-3"><label class="form-label">Notes/Plan</label><textarea name="clinical_notes" class="form-control" rows="5"></textarea></div>
+                <input type="hidden" name="encounter_date" value="{{ today }}">
+                <button type="submit" class="btn btn-success">Save Consultation</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

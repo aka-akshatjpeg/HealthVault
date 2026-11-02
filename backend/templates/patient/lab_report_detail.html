@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}{{ report.report_name }} — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+.report-hero {
+    background: linear-gradient(135deg, var(--primary, #4f46e5) 0%, #0ea5e9 100%);
+    border-radius: 16px; color: #fff; padding: 28px 32px; margin-bottom: 28px;
+    position: relative; overflow: hidden;
+}
+.report-hero::after {
+    content: ''; position: absolute; right: -40px; top: -40px;
+    width: 200px; height: 200px; background: rgba(255,255,255,.07); border-radius: 50%;
+}
+.report-hero h1 { font-size: 1.6rem; font-weight: 700; margin: 0 0 6px; }
+.report-hero .meta { opacity: .85; font-size: .88rem; display: flex; flex-wrap: wrap; gap: 16px; }
+.report-hero .meta span { display: flex; align-items: center; gap: 5px; }
+
+.detail-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 16px; overflow: hidden; margin-bottom: 20px;
+}
+.detail-card-header {
+    padding: 14px 22px; border-bottom: 1px solid var(--border-color, #e2e8f0);
+    font-weight: 700; font-size: .9rem; display: flex; align-items: center; gap: 8px;
+}
+
+/* Observations table */
+.obs-table { width: 100%; border-collapse: collapse; }
+.obs-table thead th {
+    padding: 12px 20px; font-size: .78rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted, #64748b);
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    background: var(--body-bg, #f8fafc);
+}
+body.dark-mode .obs-table thead th { background: var(--input-bg); }
+.obs-table tbody td {
+    padding: 13px 20px; font-size: .9rem;
+    border-bottom: 1px solid var(--border-color, #f1f5f9);
+}
+.obs-table tbody tr:last-child td { border-bottom: none; }
+.obs-table tbody tr.abnormal { background: rgba(239,68,68,.05); }
+body.dark-mode .obs-table tbody tr.abnormal { background: rgba(239,68,68,.1); }
+.flag-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700;
+}
+.flag-high { background: #fee2e2; color: #b91c1c; }
+.flag-low  { background: #fef3c7; color: #92400e; }
+.flag-normal { background: #d1fae5; color: #065f46; }
+body.dark-mode .flag-high   { background: rgba(239,68,68,.2);   color: #fca5a5; }
+body.dark-mode .flag-low    { background: rgba(245,158,11,.2);  color: #fcd34d; }
+body.dark-mode .flag-normal { background: rgba(16,185,129,.2);  color: #6ee7b7; }
+
+/* Document viewer */
+.doc-viewer {
+    background: var(--body-bg, #f8fafc);
+    border-radius: 12px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+body.dark-mode .doc-viewer { background: var(--input-bg); }
+.doc-icon { font-size: 2.5rem; }
+.doc-icon.pdf   { color: #ef4444; }
+.doc-icon.image { color: #10b981; }
+.doc-icon.other { color: #4f46e5; }
+.doc-info h6 { margin: 0 0 2px; font-weight: 700; font-size: .95rem; }
+.doc-info p  { margin: 0; font-size: .8rem; color: var(--text-muted); }
+
+/* PDF embed */
+.pdf-embed-wrap {
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border-color, #e2e8f0);
+    background: #fff; margin-top: 12px;
+}
+.pdf-embed-wrap embed,
+.pdf-embed-wrap iframe { display: block; width: 100%; }
+
+/* Summary box */
+.summary-box {
+    background: rgba(79,70,229,.05);
+    border-left: 4px solid var(--primary, #4f46e5);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px; font-size: .9rem; line-height: 1.6;
+}
+body.dark-mode .summary-box { background: rgba(137,207,240,.07); border-color: #89CFF0; }
+</style>
+
+<!-- ── Hero Header ─────────────────────────────────────────────────── -->
+<div class="report-hero">
+    <div class="d-flex align-items-start gap-3">
+        <div style="background:rgba(255,255,255,.2);border-radius:12px;padding:10px 14px;font-size:1.5rem;flex-shrink:0;">
+            <i class="bi bi-file-earmark-medical-fill"></i>
+        </div>
+        <div>
+            <h1>{{ report.report_name }}</h1>
+            <div class="meta">
+                {% if report.laboratory %}
+                <span><i class="bi bi-building"></i>{{ report.laboratory }}</span>
+                {% endif %}
+                <span><i class="bi bi-calendar3"></i>{{ report.report_date.strftime('%d %b %Y') }}</span>
+                {% if report.ordering_doctor %}
+                <span><i class="bi bi-person-badge"></i>Ordered by {{ report.ordering_doctor }}</span>
+                {% endif %}
+                <span>
+                    <i class="bi bi-circle-fill" style="font-size:.5rem;"></i>
+                    <span class="badge bg-white bg-opacity-25 text-white px-2">{{ report.status|capitalize }}</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Back link -->
+<div class="mb-4">
+    <a href="{{ url_for('patient.lab_reports') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>All Lab Reports
+    </a>
+</div>
+
+<!-- ── Summary / Findings ─────────────────────────────────────────── -->
+{% if report.summary %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <i class="bi bi-chat-quote text-primary"></i>Summary &amp; Findings
+    </div>
+    <div class="p-4">
+        <div class="summary-box">{{ report.summary }}</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Observations / Test Results ──────────────────────────────────── -->
+{% if report.observations %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <i class="bi bi-table text-primary"></i>
+        Individual Test Results
+        <span class="ms-auto badge bg-primary bg-opacity-10 text-primary border border-primary-subtle">
+            {{ report.observations|length }} parameters
+        </span>
+    </div>
+    <div class="table-responsive">
+        <table class="obs-table">
+            <thead>
+                <tr>
+                    <th>Test Parameter</th>
+                    <th>Result</th>
+                    <th>Unit</th>
+                    <th>Reference Range</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for obs in report.observations %}
+                <tr class="{{ 'abnormal' if obs.is_abnormal else '' }}">
+                    <td class="fw-semibold">{{ obs.test_name }}</td>
+                    <td class="{{ 'fw-bold text-danger' if obs.is_abnormal else '' }}">
+                        {{ obs.value or '—' }}
+                    </td>
+                    <td class="text-muted">{{ obs.unit or '—' }}</td>
+                    <td class="text-muted">{{ obs.reference_range or '—' }}</td>
+                    <td>
+                        {% if obs.is_abnormal %}
+                            {% if obs.interpretation == 'high' %}
+                            <span class="flag-badge flag-high"><i class="bi bi-arrow-up-short"></i>High</span>
+                            {% elif obs.interpretation == 'low' %}
+                            <span class="flag-badge flag-low"><i class="bi bi-arrow-down-short"></i>Low</span>
+                            {% else %}
+                            <span class="flag-badge flag-high"><i class="bi bi-exclamation"></i>Abnormal</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="flag-badge flag-normal"><i class="bi bi-check"></i>Normal</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Uploaded Document ──────────────────────────────────────────── -->
+{% if report.document_path %}
+{% set ext = report.document_path.rsplit('.', 1)[-1].lower() if '.' in report.document_path else '' %}
+<div class="detail-card">
+    <div class="detail-card-header">
+        <i class="bi bi-paperclip text-primary"></i>Uploaded Report Document
+    </div>
+    <div class="p-4">
+        <!-- File info bar -->
+        <div class="doc-viewer mb-3">
+            <div class="doc-icon {% if ext == 'pdf' %}pdf{% elif ext in ['jpg','jpeg','png'] %}image{% else %}other{% endif %}">
+                <i class="bi bi-file-earmark-{% if ext == 'pdf' %}pdf{% elif ext in ['jpg','jpeg','png'] %}image{% else %}text{% endif %}-fill"></i>
+            </div>
+            <div class="doc-info flex-grow-1">
+                <h6>{{ report.document_path.split('/')[-1] }}</h6>
+                <p>Uploaded by {{ report.laboratory or 'Diagnostic Centre' }} · {{ report.report_date.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/uploads/{{ report.document_path }}" target="_blank" class="btn btn-primary btn-sm">
+                    <i class="bi bi-eye me-1"></i>View
+                </a>
+                <a href="/uploads/{{ report.document_path }}" download class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-download me-1"></i>Download
+                </a>
+            </div>
+        </div>
+
+        <!-- Inline preview -->
+        {% if ext == 'pdf' %}
+        <div class="pdf-embed-wrap">
+            <iframe src="/uploads/{{ report.document_path }}" height="600"
+                    style="border:none;"></iframe>
+        </div>
+        {% elif ext in ['jpg', 'jpeg', 'png'] %}
+        <div class="text-center mt-2">
+            <img src="/uploads/{{ report.document_path }}"
+                 class="img-fluid rounded-3 shadow-sm"
+                 style="max-height: 600px; object-fit: contain;"
+                 alt="Report scan">
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<!-- No document attached -->
+<div class="detail-card">
+    <div class="detail-card-header">
+        <i class="bi bi-paperclip text-primary"></i>Document
+    </div>
+    <div class="p-4 text-center text-muted py-5">
+        <i class="bi bi-file-earmark-x fs-3 opacity-40 d-block mb-2"></i>
+        No document was attached to this report.
+    </div>
+</div>
+{% endif %}
+
+<!-- ── Report Source Info ─────────────────────────────────────────── -->
+<div class="detail-card">
+    <div class="detail-card-header">
+        <i class="bi bi-info-circle text-primary"></i>Report Information
+    </div>
+    <div class="p-4">
+        <div class="row g-3" style="font-size:.88rem;">
+            <div class="col-6 col-md-3">
+                <div class="text-muted fw-600" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Laboratory</div>
+                <div class="fw-semibold mt-1">{{ report.laboratory or '—' }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Report Date</div>
+                <div class="fw-semibold mt-1">{{ report.report_date.strftime('%d %b %Y') }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Ordered By</div>
+                <div class="fw-semibold mt-1">{{ report.ordering_doctor or '—' }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Status</div>
+                <div class="fw-semibold mt-1">
+                    <span class="badge bg-success-subtle text-success">{{ report.status|capitalize }}</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Source</div>
+                <div class="fw-semibold mt-1">{{ report.source_organization or report.source or '—' }}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Record Added</div>
+                <div class="fw-semibold mt-1">{{ report.created_at.strftime('%d %b %Y') }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Surgeries & Procedures — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+/* ── Procedures Page Styles ─────────────────────────────────────── */
+.proc-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+.proc-header h1 { font-size: 1.7rem; font-weight: 700; margin: 0; }
+.proc-header p  { margin: 4px 0 0; color: var(--text-muted, #64748b); font-size: .9rem; }
+
+.proc-count-bar {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
+}
+.proc-tile {
+    flex: 1; min-width: 110px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px; padding: 14px 18px;
+}
+.proc-tile .num { font-size: 1.6rem; font-weight: 700; color: var(--primary, #4f46e5); line-height: 1; }
+body.dark-mode .proc-tile .num { color: #89CFF0; }
+.proc-tile .lbl { font-size: .75rem; color: var(--text-muted, #64748b); font-weight: 500; margin-top: 4px; }
+
+/* ── Timeline-style procedure card ─────────────────────────────── */
+.proc-timeline { position: relative; padding-left: 36px; }
+.proc-timeline::before {
+    content: '';
+    position: absolute; left: 15px; top: 0; bottom: 0;
+    width: 2px; background: var(--border-color, #e2e8f0);
+}
+.proc-item { position: relative; margin-bottom: 24px; }
+.proc-dot {
+    position: absolute; left: -29px; top: 18px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--primary, #4f46e5);
+    border: 3px solid var(--card-bg, #fff);
+    box-shadow: 0 0 0 2px var(--primary, #4f46e5);
+}
+body.dark-mode .proc-dot { background: #89CFF0; box-shadow: 0 0 0 2px #89CFF0; border-color: var(--card-bg); }
+
+.proc-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 14px; padding: 20px 22px;
+    transition: box-shadow .2s;
+}
+.proc-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+body.dark-mode .proc-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+
+.proc-card-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.proc-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 2px; }
+.proc-meta { font-size: .82rem; color: var(--text-muted, #64748b); display: flex; flex-wrap: wrap; gap: 10px; }
+.proc-meta span { display: flex; align-items: center; gap: 4px; }
+
+.proc-date-badge {
+    background: var(--primary-light, #e0e7ff);
+    color: var(--primary, #4f46e5);
+    border-radius: 8px; padding: 6px 12px;
+    font-size: .78rem; font-weight: 700;
+    white-space: nowrap; text-align: center; line-height: 1.4;
+    flex-shrink: 0;
+}
+body.dark-mode .proc-date-badge {
+    background: rgba(137,207,240,.15); color: #89CFF0;
+}
+
+.proc-detail-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px; margin-top: 14px;
+}
+.proc-detail-item {
+    background: var(--body-bg, #f8fafc);
+    border-radius: 10px; padding: 10px 14px;
+}
+body.dark-mode .proc-detail-item { background: var(--input-bg, #262626); }
+.proc-detail-item .di-label { font-size: .7rem; font-weight: 700; color: var(--text-muted, #94a3b8); text-transform: uppercase; letter-spacing: .06em; }
+.proc-detail-item .di-value { font-size: .88rem; font-weight: 600; margin-top: 2px; }
+
+.proc-notes {
+    margin-top: 12px; padding: 12px 14px;
+    background: var(--body-bg, #f8fafc);
+    border-radius: 10px; font-size: .85rem;
+    color: var(--text-muted, #64748b);
+    border-left: 3px solid var(--border-color, #e2e8f0);
+}
+body.dark-mode .proc-notes { background: var(--input-bg); }
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.proc-empty {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted, #94a3b8);
+}
+.proc-empty i { font-size: 3.5rem; opacity: .4; margin-bottom: 16px; display: block; }
+.proc-empty p { font-size: .95rem; margin: 0; }
+</style>
+
+<!-- ── Page Header ───────────────────────────────────────────────── -->
+<div class="proc-header">
+    <div>
+        <h1><i class="bi bi-scissors me-2" style="color: var(--primary);"></i>Surgeries &amp; Procedures</h1>
+        <p>Complete surgical and clinical procedure history for {{ patient.full_name }}</p>
+    </div>
+</div>
+
+<!-- ── Summary Tiles ─────────────────────────────────────────────── -->
+<div class="proc-count-bar">
+    <div class="proc-tile">
+        <div class="num">{{ procedures|length }}</div>
+        <div class="lbl">Total Procedures</div>
+    </div>
+    {% set ns = namespace(surgery_count=0) %}
+{% for p in procedures %}
+  {% set lname = p.procedure_name | lower %}
+  {% if 'surgery' in lname or 'operation' in lname or 'bypass' in lname or 'resection' in lname or 'repair' in lname or 'replacement' in lname or 'transplant' in lname or 'appendectomy' in lname or 'cholecystectomy' in lname %}
+    {% set ns.surgery_count = ns.surgery_count + 1 %}
+  {% endif %}
+{% endfor %}
+<div class="proc-tile">
+<div class="num" style="color: #ef4444;">{{ ns.surgery_count }}</div>
+        <div class="lbl">Surgeries</div>
+    </div>
+    {% if procedures %}
+    <div class="proc-tile">
+        <div class="num" style="color: #10b981;">{{ procedures[0].procedure_date.strftime('%Y') if procedures[0].procedure_date else '—' }}</div>
+        <div class="lbl">Most Recent Year</div>
+    </div>
+    {% endif %}
+    <div class="proc-tile">
+        <div class="num" style="color: #f59e0b;">{{ uploaded_docs|length }}</div>
+        <div class="lbl">Attached Documents</div>
+    </div>
+</div>
+
+<!-- ── Procedure Timeline ────────────────────────────────────────── -->
+{% if procedures %}
+<div class="proc-timeline">
+    {% for p in procedures %}
+    <div class="proc-item">
+        <div class="proc-dot"></div>
+        <div class="proc-card">
+            <div class="proc-card-top">
+                <div>
+                    <div class="proc-name">{{ p.procedure_name }}</div>
+                    <div class="proc-meta">
+                        {% if p.hospital %}
+                        <span><i class="bi bi-building-fill-cross"></i>{{ p.hospital }}</span>
+                        {% endif %}
+                        {% if p.surgeon %}
+                        <span><i class="bi bi-person-badge-fill"></i>{{ p.surgeon }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if p.procedure_date %}
+                <div class="proc-date-badge">
+                    <div>{{ p.procedure_date.strftime('%d %b') }}</div>
+                    <div>{{ p.procedure_date.strftime('%Y') }}</div>
+                </div>
+                {% else %}
+                <div class="proc-date-badge">Date<br>Unknown</div>
+                {% endif %}
+            </div>
+
+            <!-- Detail grid: indication / outcome -->
+            {% if p.indication or p.outcome %}
+            <div class="proc-detail-grid">
+                {% if p.indication %}
+                <div class="proc-detail-item">
+                    <div class="di-label"><i class="bi bi-question-circle me-1"></i>Indication</div>
+                    <div class="di-value">{{ p.indication }}</div>
+                </div>
+                {% endif %}
+                {% if p.outcome %}
+                <div class="proc-detail-item">
+                    <div class="di-label"><i class="bi bi-check2-circle me-1"></i>Outcome</div>
+                    <div class="di-value">{{ p.outcome }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Notes -->
+            {% if p.notes %}
+            <div class="proc-notes">
+                <i class="bi bi-sticky me-1"></i>{{ p.notes }}
+            </div>
+            {% endif %}
+
+            <!-- Document link if any -->
+            {% if p.document_path %}
+            <div class="mt-3">
+                <a href="{{ url_for('patient.download_document', filename=p.document_path.split('/')[-1]) }}"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>View Report
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- ── Empty State ───────────────────────────────────────────────── -->
+<div class="proc-empty">
+    <i class="bi bi-scissors"></i>
+    <h5 class="fw-bold mb-2">No Procedures on Record</h5>
+    <p>No surgical or clinical procedures have been recorded yet.<br>
+       Ask your doctor to add records, or upload a discharge summary.</p>
+</div>
+{% endif %}
+
+<!-- ── Uploaded Documents ────────────────────────────────────────── -->
+{% include 'patient/includes/uploaded_docs_section.html' %}
+
+{% endblock %}

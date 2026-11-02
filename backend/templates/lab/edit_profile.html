@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Edit Laboratory Profile — HealthVault{% endblock %}
+{% block content %}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h1 class="page-title">Edit Laboratory Profile</h1>
+    <p class="page-subtitle">Update your laboratory details and available tests</p>
+  </div>
+  <div>
+    <a href="{{ url_for('lab.profile') }}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('lab.edit_profile') }}" enctype="multipart/form-data">
+  <div class="row g-4">
+    <!-- Left Column -->
+    <div class="col-lg-4">
+      <div class="hv-card h-100">
+        <h4 class="hv-card-title mb-4">Laboratory Logo</h4>
+        <div class="d-flex flex-column align-items-center mb-4">
+          <div style="width: 140px; height: 140px; border-radius: 12px; background: var(--hv-surface-2); border: 1px solid var(--hv-border); overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            {% if provider.profile_photo %}
+              <img src="{{ url_for('uploaded_file', filename=provider.profile_photo) }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Lab Logo">
+            {% else %}
+              <i class="bi bi-building text-secondary" style="font-size: 4rem;"></i>
+            {% endif %}
+          </div>
+          <input type="file" name="profile_photo" id="profile_photo" class="form-control form-control-sm w-75" accept="image/*">
+          <label for="profile_photo" class="form-text mt-2 text-center">Upload your lab's logo (JPG, PNG).</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-lg-8">
+      
+      <!-- Laboratory Information -->
+      <div class="hv-card mb-4">
+        <h4 class="hv-card-title mb-4">Laboratory Information</h4>
+        
+        <div class="mb-3">
+          <label class="form-label hv-label">Laboratory Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="lab_name" value="{{ provider.full_name }}" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label hv-label">About the Laboratory</label>
+          <textarea class="form-control" name="about" rows="4" placeholder="Brief description of your lab, accreditations, and specialties...">{{ provider.bio or '' }}</textarea>
+        </div>
+      </div>
+
+      <!-- Contact & Location -->
+      <div class="hv-card mb-4">
+        <h4 class="hv-card-title mb-4">Contact & Location</h4>
+        
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label hv-label">Phone Number <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="phone" value="{{ provider.phone or (provider.organization.phone if provider.organization else '') }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label hv-label">Email</label>
+            <input type="email" class="form-control" name="email" value="{% if provider.organization %}{{ provider.organization.email or '' }}{% endif %}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label hv-label">Website</label>
+            <input type="url" class="form-control" name="website" value="{% if provider.organization %}{{ provider.organization.website or '' }}{% endif %}" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label hv-label">Full Address</label>
+          <input type="text" class="form-control" name="address" value="{% if provider.organization %}{{ provider.organization.address or '' }}{% endif %}">
+        </div>
+        
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label hv-label">City</label>
+            <input type="text" class="form-control" name="city" value="{% if provider.organization %}{{ provider.organization.city or '' }}{% endif %}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label hv-label">State</label>
+            <input type="text" class="form-control" name="state" value="{% if provider.organization %}{{ provider.organization.state or '' }}{% endif %}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label hv-label">Pincode</label>
+            <input type="text" class="form-control" name="pincode" value="{% if provider.organization %}{{ provider.organization.pincode or '' }}{% endif %}">
+          </div>
+        </div>
+      </div>
+
+      <!-- Services & Tests -->
+      <div class="hv-card mb-4">
+        <h4 class="hv-card-title mb-4">Services & Tests</h4>
+        
+        <div class="mb-3">
+          <label class="form-label hv-label">Diagnostic Services Offered</label>
+          <textarea class="form-control" name="services_offered" rows="2" placeholder="e.g. Pathology, Biochemistry, Imaging (Comma separated)">{% if provider.organization %}{{ provider.organization.services_offered or '' }}{% endif %}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label hv-label">Available Tests & Packages</label>
+          <textarea class="form-control" name="tests_available" rows="3" placeholder="e.g. CBC, Lipid Profile, Full Body Checkup (Comma separated)">{% if provider.organization %}{{ provider.organization.tests_available or '' }}{% endif %}</textarea>
+        </div>
+      </div>
+      
+      <!-- Operating Hours -->
+      <div class="hv-card mb-4">
+        <h4 class="hv-card-title mb-4">Operating Hours</h4>
+        
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label hv-label">Working Days</label>
+            <input type="text" class="form-control" name="working_days" value="{% if provider.organization %}{{ provider.organization.working_days or '' }}{% endif %}" placeholder="e.g. Monday-Sunday">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label hv-label">Opening Time</label>
+            <input type="text" class="form-control" name="opening_hours" value="{% if provider.organization %}{{ provider.organization.opening_hours or '' }}{% endif %}" placeholder="e.g. 7:00 AM">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label hv-label">Closing Time</label>
+            <input type="text" class="form-control" name="closing_hours" value="{% if provider.organization %}{{ provider.organization.closing_hours or '' }}{% endif %}" placeholder="e.g. 8:00 PM">
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label hv-label">Emergency / Extended Hours</label>
+          <input type="text" class="form-control" name="emergency_hours" value="{% if provider.organization %}{{ provider.organization.emergency_hours or '' }}{% endif %}" placeholder="e.g. 24/7 Emergency Blood Bank">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex justify-content-end gap-3 mb-5">
+        <a href="{{ url_for('lab.profile') }}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-medium">Cancel</a>
+        <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-medium shadow-sm">Save Changes</button>
+      </div>
+
+    </div>
+  </div>
+</form>
+{% endblock %}

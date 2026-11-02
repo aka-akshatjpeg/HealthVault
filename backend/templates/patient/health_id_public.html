@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ patient.full_name }} — HealthVault ID</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .hv-card {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%; max-width: 380px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0,0,0,.4);
+        }
+        .hv-card-header {
+            background: linear-gradient(135deg, #1e3a5f, #4f46e5);
+            padding: 28px 24px 20px;
+            color: #fff;
+            text-align: center;
+        }
+        .hv-logo {
+            font-size: 1.1rem; font-weight: 800; letter-spacing: -.02em;
+            opacity: .9; margin-bottom: 16px;
+        }
+        .hv-avatar {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: rgba(255,255,255,.15);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 2rem; color: #fff;
+            border: 3px solid rgba(255,255,255,.3);
+        }
+        .hv-name { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+        .hv-id-badge {
+            display: inline-block;
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.3);
+            border-radius: 999px; padding: 4px 16px;
+            font-size: .82rem; font-weight: 700;
+            letter-spacing: .12em; font-family: monospace;
+        }
+        .hv-card-body { padding: 24px; }
+        .info-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 1rem;
+        }
+        .info-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; font-weight: 600; }
+        .info-value { font-size: .92rem; font-weight: 600; color: #1e293b; margin-top: 1px; }
+        .blood-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #fee2e2; color: #b91c1c;
+            border-radius: 8px; padding: 2px 10px;
+            font-weight: 800; font-size: .95rem;
+        }
+        .hv-card-footer {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 14px 24px;
+            text-align: center;
+            font-size: .75rem; color: #94a3b8;
+        }
+        .hv-card-footer a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+        .verified-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #f0fdf4; border: 1px solid #bbf7d0;
+            color: #16a34a; border-radius: 999px; padding: 4px 12px;
+            font-size: .75rem; font-weight: 700; margin-top: 12px;
+        }
+        .disclaimer {
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 10px; padding: 10px 14px;
+            font-size: .78rem; color: #92400e;
+            margin: 16px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="hv-card">
+        <div class="hv-card-header">
+            <div class="hv-logo">
+                <i class="bi bi-heart-pulse-fill me-1"></i> HealthVault
+            </div>
+            <div class="hv-avatar"><i class="bi bi-person-fill"></i></div>
+            <div class="hv-name">{{ patient.full_name }}</div>
+            <div class="hv-id-badge">{{ patient.health_identity.hv_id }}</div>
+            <div class="verified-badge">
+                <i class="bi bi-patch-check-fill"></i> Verified HealthVault ID
+            </div>
+        </div>
+
+        <div class="hv-card-body">
+            <div class="info-row">
+                <div class="info-icon" style="background:#eff6ff; color:#2563eb;"><i class="bi bi-calendar3"></i></div>
+                <div>
+                    <div class="info-label">Date of Birth</div>
+                    <div class="info-value">{{ patient.date_of_birth.strftime('%d %B %Y') if patient.date_of_birth else 'Not provided' }}</div>
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-icon" style="background:#fef2f2; color:#dc2626;"><i class="bi bi-droplet-fill"></i></div>
+                <div>
+                    <div class="info-label">Blood Group</div>
+                    <div class="info-value">
+                        <span class="blood-badge"><i class="bi bi-droplet-fill" style="font-size:.7rem;"></i>{{ patient.blood_group or 'Unknown' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if patient.gender %}
+            <div class="info-row">
+                <div class="info-icon" style="background:#f5f3ff; color:#7c3aed;"><i class="bi bi-person"></i></div>
+                <div>
+                    <div class="info-label">Gender</div>
+                    <div class="info-value">{{ patient.gender | capitalize }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if patient.allergies %}
+            {% set severe_allergies = patient.allergies | selectattr('severity', 'in', ['severe', 'life-threatening']) | list %}
+            {% if severe_allergies %}
+            <div class="info-row">
+                <div class="info-icon" style="background:#fff7ed; color:#ea580c;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div>
+                    <div class="info-label">⚠ Critical Allergies</div>
+                    {% for alg in severe_allergies %}
+                    <div class="info-value text-danger fw-bold">{{ alg.allergen }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <div class="disclaimer">
+                <i class="bi bi-info-circle me-1"></i>
+                This is a <strong>read-only</strong> identity card. No medical records are accessible here. For full access, contact the patient directly.
+            </div>
+        </div>
+
+        <div class="hv-card-footer">
+            <i class="bi bi-shield-lock me-1"></i>
+            Secured by <a href="http://localhost:5000">HealthVault</a> &bull; Scan authorized
+        </div>
+    </div>
+</body>
+</html>

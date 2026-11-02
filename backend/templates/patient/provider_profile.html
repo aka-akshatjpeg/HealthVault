@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}{{ provider.full_name }} — HealthVault{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="d-flex align-items-center gap-3">
+    <a href="javascript:history.back()" class="btn btn-light rounded-circle shadow-sm" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h1 class="page-title">{{ provider.full_name }}</h1>
+      <p class="page-subtitle">Provider Information</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% set is_lab = (provider.user.role == 'lab' if provider.user else (provider.specialty == 'Diagnostic Laboratory')) %}
+  
+  <!-- Left Column -->
+  <div class="col-lg-4">
+    <div class="hv-card text-center text-lg-start">
+      <div class="d-flex flex-column align-items-center mb-4">
+        <div style="width: 140px; height: 140px; border-radius: {% if is_lab %}12px{% else %}50%{% endif %}; background: var(--hv-surface-2); border: 4px solid var(--hv-surface); box-shadow: var(--hv-shadow-sm); overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+          {% if provider.profile_photo %}
+            <img src="{{ url_for('uploaded_file', filename=provider.profile_photo) }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Profile Photo">
+          {% else %}
+            {% if is_lab %}
+              <i class="bi bi-building text-secondary" style="font-size: 4rem;"></i>
+            {% else %}
+              <i class="bi bi-person text-secondary" style="font-size: 4rem;"></i>
+            {% endif %}
+          {% endif %}
+        </div>
+        <h3 class="fw-bold mb-1" style="color: var(--hv-text-1);">{{ provider.full_name }}</h3>
+        <p class="text-primary fw-medium mb-1">{{ provider.specialty or 'Healthcare Provider' }}</p>
+        {% if provider.is_verified %}
+          <span class="badge status-success mt-2"><i class="bi bi-check-circle-fill me-1"></i>Verified on HealthVault</span>
+        {% endif %}
+      </div>
+
+      <hr class="mb-4">
+
+      {% if not is_lab %}
+        {% if provider.qualifications %}
+        <div class="mb-3">
+          <p class="hv-label mb-1">Qualifications</p>
+          <p class="fw-medium text-dark mb-0">{{ provider.qualifications }}</p>
+        </div>
+        {% endif %}
+        
+        {% if provider.experience_years %}
+        <div class="mb-3">
+          <p class="hv-label mb-1">Experience</p>
+          <p class="fw-medium text-dark mb-0">{{ provider.experience_years }} years</p>
+        </div>
+        {% endif %}
+
+        {% if provider.languages %}
+        <div class="mb-3">
+          <p class="hv-label mb-1">Languages Spoken</p>
+          <p class="fw-medium text-dark mb-0">{{ provider.languages }}</p>
+        </div>
+        {% endif %}
+      {% endif %}
+
+      <div class="mb-3">
+        <p class="hv-label mb-1">Contact Phone</p>
+        <p class="fw-medium text-dark mb-0">{{ provider.phone or (provider.organization.phone if provider.organization else '—') }}</p>
+      </div>
+
+      {% if is_lab and provider.organization and provider.organization.website %}
+      <div>
+        <p class="hv-label mb-1">Website</p>
+        <p class="fw-medium text-primary mb-0"><a href="{{ provider.organization.website }}" target="_blank">{{ provider.organization.website }}</a></p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div class="col-lg-8">
+    
+    <div class="hv-card mb-4">
+      <h4 class="hv-card-title mb-3">{% if is_lab %}About Laboratory{% else %}About Me{% endif %}</h4>
+      <p class="text-muted" style="line-height: 1.6;">{{ provider.bio or (provider.organization.about if provider.organization and is_lab else 'No details provided.') }}</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-6">
+        <div class="hv-card h-100">
+          <h4 class="hv-card-title mb-3"><i class="bi bi-geo-alt text-primary me-2"></i>Location</h4>
+          {% if not is_lab %}
+          <div class="mb-3">
+            <p class="hv-label mb-1">Hospital / Clinic</p>
+            <p class="fw-medium text-dark mb-0">{% if provider.organization %}{{ provider.organization.name }}{% else %}—{% endif %}</p>
+          </div>
+          {% endif %}
+          <div class="mb-0">
+            <p class="hv-label mb-1">Full Address</p>
+            <p class="text-dark mb-0">
+              {% if provider.organization and provider.organization.address %}
+                {{ provider.organization.address }}<br>
+                {{ provider.organization.city or '' }} {{ provider.organization.state or '' }}<br>
+                {{ provider.organization.pincode or '' }}
+              {% else %}
+                —
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {% if not is_lab %}
+      <div class="col-md-6">
+        <div class="hv-card h-100">
+          <h4 class="hv-card-title mb-3"><i class="bi bi-wallet2 text-success me-2"></i>Consultation Details</h4>
+          <div class="mb-3">
+            <p class="hv-label mb-1">Consultation Fee</p>
+            <p class="fw-bold text-dark fs-5 mb-0">{% if provider.consultation_fee %}₹{{ provider.consultation_fee }}{% else %}—{% endif %}</p>
+          </div>
+          <div class="mb-0">
+            <p class="hv-label mb-1">Consultation Type</p>
+            <p class="fw-medium text-dark mb-0">
+              {% if provider.consultation_type %}
+                {% if provider.consultation_type == 'In-person' %}<span class="badge bg-light text-dark border"><i class="bi bi-person-fill me-1"></i>In-person</span>{% endif %}
+                {% if provider.consultation_type == 'Online' %}<span class="badge bg-light text-dark border"><i class="bi bi-camera-video-fill me-1"></i>Online</span>{% endif %}
+                {% if provider.consultation_type == 'Both' %}<span class="badge bg-light text-dark border"><i class="bi bi-person-fill me-1"></i>In-person</span> <span class="badge bg-light text-dark border"><i class="bi bi-camera-video-fill me-1"></i>Online</span>{% endif %}
+              {% else %}
+              —
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if is_lab %}
+      <div class="col-md-6">
+        <div class="hv-card h-100">
+          <h4 class="hv-card-title mb-3"><i class="bi bi-clock text-warning me-2"></i>Operating Hours</h4>
+          <div class="mb-3">
+            <p class="hv-label mb-1">Working Days</p>
+            <p class="fw-medium text-dark mb-0">{% if provider.organization %}{{ provider.organization.working_days or '—' }}{% else %}—{% endif %}</p>
+          </div>
+          <div class="row">
+            <div class="col-6">
+              <p class="hv-label mb-1">Opens at</p>
+              <p class="fw-medium text-dark mb-0">{% if provider.organization %}{{ provider.organization.opening_hours or '—' }}{% else %}—{% endif %}</p>
+            </div>
+            <div class="col-6">
+              <p class="hv-label mb-1">Closes at</p>
+              <p class="fw-medium text-dark mb-0">{% if provider.organization %}{{ provider.organization.closing_hours or '—' }}{% else %}—{% endif %}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if not is_lab %}
+    <div class="hv-card mb-4">
+      <h4 class="hv-card-title mb-3"><i class="bi bi-clock-history text-warning me-2"></i>Availability</h4>
+      <div class="row">
+        <div class="col-md-4 mb-3 mb-md-0">
+          <p class="hv-label mb-1">Working Days</p>
+          <p class="fw-medium text-dark mb-0">{{ provider.working_days or '—' }}</p>
+        </div>
+        <div class="col-md-4 mb-3 mb-md-0">
+          <p class="hv-label mb-1">Working Hours</p>
+          <p class="fw-medium text-dark mb-0">{{ provider.working_hours or '—' }}</p>
+        </div>
+        <div class="col-md-4">
+          <p class="hv-label mb-1">Slot Duration</p>
+          <p class="fw-medium text-dark mb-0">{% if provider.slot_duration %}{{ provider.slot_duration }} mins{% else %}—{% endif %}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="hv-card">
+      <h4 class="hv-card-title mb-3">{% if is_lab %}<i class="bi bi-clipboard2-pulse text-success me-2"></i>Services & Tests{% else %}<i class="bi bi-clipboard2-pulse text-success me-2"></i>Services & Expertise{% endif %}</h4>
+      
+      {% if is_lab %}
+        <div class="mb-4">
+          <p class="hv-label mb-2">Diagnostic Services</p>
+          <div class="d-flex flex-wrap gap-2">
+            {% if provider.organization and provider.organization.services_offered %}
+              {% for service in provider.organization.services_offered.split(',') %}
+                <span class="badge bg-light text-dark border p-2">{{ service.strip() }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">No services listed.</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <p class="hv-label mb-2">Available Tests & Packages</p>
+          <div class="d-flex flex-wrap gap-2">
+            {% if provider.organization and provider.organization.tests_available %}
+              {% for test in provider.organization.tests_available.split(',') %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-medium px-3 py-2">{{ test.strip() }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">No tests listed.</span>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="d-flex flex-wrap gap-2">
+          {% if provider.services %}
+            {% for service in provider.services.split(',') %}
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fw-medium px-3 py-2">{{ service.strip() }}</span>
+            {% endfor %}
+          {% else %}
+            <span class="text-muted">No services listed.</span>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "HealthVault",
+    "slug": "HealthVaultMobile",
+    "version": "1.0.0",
+    "scheme": "healthvault",
+    "orientation": "portrait",
+    "icon": "./assets/images/healthvault-logo-transparent.png",
+    "splash": {
+      "image": "./assets/images/healthvault-logo-transparent.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.healthvault.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/images/healthvault-logo-transparent.png"
+      },
+      "package": "com.healthvault.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      "expo-web-browser",
+      "expo-sharing"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

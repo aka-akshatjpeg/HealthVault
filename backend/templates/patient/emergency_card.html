@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Emergency Card — {{ patient.full_name }}{% endblock %}
+
+{% block content %}
+<style>
+.ec-wrap {
+    display: flex; justify-content: center; align-items: flex-start;
+    padding: 24px 16px 60px; min-height: 80vh;
+}
+.ec-card {
+    width: 100%; max-width: 680px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+/* The red top bar */
+.ec-header {
+    background: #ef4444; color: #fff;
+    padding: 16px 28px; font-weight: 800; font-size: 1.1rem;
+    letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px;
+}
+.ec-header i { font-size: 1.4rem; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: .5; } 100% { opacity: 1; } }
+
+/* Top section: Identity & Stats */
+.ec-top {
+    padding: 32px 32px 24px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+    flex-wrap: wrap;
+}
+.ec-name {
+    font-size: 2rem; font-weight: 900; margin-bottom: 6px;
+    color: var(--text-primary); line-height: 1.2; letter-spacing: -0.02em;
+}
+.ec-hvid {
+    font-size: 1.05rem; font-family: monospace; color: var(--text-muted);
+    font-weight: 600; margin-bottom: 24px;
+    background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+body.light-mode .ec-hvid { background: rgba(0,0,0,0.04); }
+
+.ec-qr {
+    width: 120px; height: 120px; flex-shrink: 0;
+    background: #fff; border-radius: 12px; padding: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.ec-qr img { width: 100%; height: 100%; object-fit: contain; }
+
+.ec-stats-row {
+    display: flex; gap: 36px; flex-wrap: wrap;
+}
+.ec-stat .lbl { font-size: .75rem; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.04em; }
+.ec-stat .val { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
+.val.blood { color: #ef4444; font-size: 1.4rem; font-weight: 900; }
+
+/* Sections */
+.ec-section {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border-color);
+}
+.ec-section:last-child { border-bottom: none; }
+.ec-sec-title {
+    font-size: .8rem; font-weight: 800; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+}
+.ec-sec-val {
+    font-size: 1.05rem; color: var(--text-primary); font-weight: 500; line-height: 1.6;
+}
+.ec-sec-val.critical { color: #ef4444; font-weight: 700; }
+.ec-sec-val.empty { color: var(--text-muted); font-style: italic; font-weight: 400; font-size: .95rem; }
+
+/* Contact box */
+.contact-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 14px; padding: 20px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+}
+body.light-mode .contact-box { background: #f8fafc; }
+.cb-name { font-weight: 800; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 2px; }
+.cb-rel { font-size: .85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.cb-phone {
+    font-weight: 800; font-family: monospace; font-size: 1.25rem;
+    color: var(--primary); display: flex; align-items: center; gap: 8px;
+    background: var(--input-bg); padding: 8px 16px; border-radius: 10px; border: 1px solid var(--input-border);
+}
+body.light-mode .cb-phone { color: #4f46e5; }
+
+/* Organ Donor Badge */
+.donor-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(16,185,129,0.15); color: #10b981;
+    border: 1px solid rgba(16,185,129,0.3);
+    padding: 6px 14px; border-radius: 999px;
+    font-size: .85rem; font-weight: 700; margin-top: 16px;
+}
+body.light-mode .donor-badge { background: #d1fae5; color: #059669; border-color: #a7f3d0; }
+
+.ec-footer {
+    padding: 16px 32px; background: rgba(0,0,0,0.15);
+    text-align: center; font-size: .75rem; color: var(--text-muted);
+}
+body.light-mode .ec-footer { background: rgba(0,0,0,0.02); }
+</style>
+
+{% set ep = patient.emergency_profile %}
+{% set hi = patient.health_identity %}
+
+{% if not public %}
+<div class="page-header d-flex justify-content-between align-items-center mb-0">
+    <h1 class="page-title mb-0">Emergency Card</h1>
+    <a href="{{ url_for('patient.settings') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i> Edit Info
+    </a>
+</div>
+{% endif %}
+
+<div class="ec-wrap">
+    <div class="ec-card">
+        <div class="ec-header">
+            <i class="bi bi-heart-pulse-fill"></i>
+            MEDICAL EMERGENCY INFORMATION
+        </div>
+
+        <div class="ec-top">
+            <div style="flex:1;">
+                <h2 class="ec-name">{{ patient.full_name }}</h2>
+                <div class="ec-hvid">
+                    <i class="bi bi-qr-code"></i>
+                    {% if hi %}{{ hi.hv_id }}{% else %}ID Not Generated{% endif %}
+                </div>
+
+                <div class="ec-stats-row">
+                    <div class="ec-stat">
+                        <div class="lbl">Blood Group</div>
+                        <div class="val blood">{{ patient.blood_group or 'Unknown' }}</div>
+                    </div>
+                    <div class="ec-stat">
+                        <div class="lbl">Age & Sex</div>
+                        <div class="val">{{ patient.age() }}y &middot; {{ (patient.biological_sex or 'Unknown') | capitalize }}</div>
+                    </div>
+                    <div class="ec-stat">
+                        <div class="lbl">Date of Birth</div>
+                        <div class="val">{{ patient.date_of_birth.strftime('%d %b %Y') if patient.date_of_birth else 'Unknown' }}</div>
+                    </div>
+                </div>
+
+                {% if ep and ep.organ_donor %}
+                <div class="donor-badge">
+                    <i class="bi bi-gift-fill"></i> Registered Organ Donor
+                </div>
+                {% endif %}
+            </div>
+
+            {% if hi and hi.qr_code_path %}
+            <div class="ec-qr">
+                <img src="{{ url_for('uploaded_file', filename=hi.qr_code_path) }}" alt="QR Code">
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Critical Allergies -->
+        <div class="ec-section" style="background: rgba(239,68,68,0.03);">
+            <div class="ec-sec-title text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Critical Allergies</div>
+            {% if ep and ep.critical_allergies %}
+                <div class="ec-sec-val critical">{{ ep.critical_allergies }}</div>
+            {% else %}
+                <div class="ec-sec-val empty">No known critical allergies specified.</div>
+            {% endif %}
+        </div>
+
+        <!-- Critical Medications -->
+        <div class="ec-section">
+            <div class="ec-sec-title"><i class="bi bi-capsule"></i> Current Critical Medications</div>
+            {% if ep and ep.critical_medications %}
+                <div class="ec-sec-val">{{ ep.critical_medications }}</div>
+            {% else %}
+                <div class="ec-sec-val empty">No critical medications specified.</div>
+            {% endif %}
+        </div>
+
+        <!-- Major Conditions -->
+        <div class="ec-section">
+            <div class="ec-sec-title"><i class="bi bi-clipboard2-pulse"></i> Major Medical Conditions</div>
+            {% if ep and ep.major_conditions %}
+                <div class="ec-sec-val">{{ ep.major_conditions }}</div>
+            {% else %}
+                <div class="ec-sec-val empty">No major conditions specified.</div>
+            {% endif %}
+        </div>
+
+        <!-- Special Notes -->
+        {% if ep and ep.special_notes %}
+        <div class="ec-section">
+            <div class="ec-sec-title"><i class="bi bi-info-circle"></i> Special Medical Notes</div>
+            <div class="ec-sec-val">{{ ep.special_notes }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Emergency Contact -->
+        <div class="ec-section">
+            <div class="ec-sec-title"><i class="bi bi-telephone-fill"></i> Emergency Contact</div>
+            {% if ep and ep.emergency_contact_name and ep.emergency_contact_phone %}
+            <div class="contact-box">
+                <div>
+                    <div class="cb-rel">{{ ep.emergency_contact_relation or 'Emergency Contact' }}</div>
+                    <div class="cb-name">{{ ep.emergency_contact_name }}</div>
+                </div>
+                <div class="cb-phone">
+                    <i class="bi bi-telephone-outbound"></i> {{ ep.emergency_contact_phone }}
+                </div>
+            </div>
+            {% else %}
+                <div class="ec-sec-val empty">No emergency contact information provided.</div>
+            {% endif %}
+        </div>
+
+        <div class="ec-footer">
+            <i class="bi bi-shield-lock me-1"></i> Data managed by HealthVault. 
+            {% if ep and ep.updated_at %}
+            Last updated: {{ ep.updated_at.strftime('%d %b %Y') }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

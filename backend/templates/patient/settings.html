@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% block title %}Account Settings — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+.settings-wrap {
+    max-width: 800px; margin: 0 auto 60px;
+}
+.empty-val {
+    color: var(--hv-text-3);
+    font-style: italic;
+}
+</style>
+
+<div class="page-header d-flex justify-content-between align-items-end" style="max-width: 800px; margin: 0 auto 32px;">
+    <div>
+        <h1 class="page-title">Account Settings</h1>
+        <p class="page-subtitle">Manage your personal profile, contact information, and emergency medical data.</p>
+    </div>
+    <div id="viewActions">
+        <button class="btn btn-primary" onclick="toggleEditMode(true)">
+            <i class="bi bi-pencil-square me-1"></i> Edit Profile
+        </button>
+    </div>
+</div>
+
+<div class="settings-wrap">
+    
+    <!-- ================= VIEW MODE ================= -->
+    <div id="viewMode">
+        <!-- Personal Information -->
+        <div class="hv-card">
+            <div class="hv-card-header">
+                <h2 class="hv-card-title"><i class="bi bi-person-vcard text-teal me-2"></i> Personal Information</h2>
+            </div>
+            <div class="hv-card-body">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <div class="hv-label">Full Name</div>
+                        <div class="fw-bold fs-5 text-dark">{{ patient.full_name }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="hv-label">Date of Birth</div>
+                        <div class="text-dark">{{ patient.date_of_birth.strftime('%d %b %Y') if patient.date_of_birth else '<span class="empty-val">Not provided</span>'|safe }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="hv-label">Biological Sex</div>
+                        <div class="text-capitalize text-dark">{{ patient.biological_sex if patient.biological_sex else '<span class="empty-val">Not provided</span>'|safe }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="hv-label">Blood Group</div>
+                        <div>
+                            {% if patient.blood_group %}
+                            <span class="badge status-danger">{{ patient.blood_group }}</span>
+                            {% else %}
+                            <span class="empty-val">Unknown</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="hv-label">Phone Number</div>
+                        <div class="text-dark">{{ patient.phone if patient.phone else '<span class="empty-val">Not provided</span>'|safe }}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="hv-label">Address</div>
+                        <div class="text-dark">
+                            {% if patient.address or patient.city or patient.state %}
+                                {{ patient.address }}{{ ', ' if patient.address and patient.city else '' }}{{ patient.city }}{{ ', ' if (patient.address or patient.city) and patient.state else '' }}{{ patient.state }}
+                            {% else %}
+                                <span class="empty-val">Not provided</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Data -->
+        <div class="hv-card">
+            <div class="hv-card-header">
+                <h2 class="hv-card-title"><i class="bi bi-heart-pulse text-teal me-2"></i> Emergency Profile</h2>
+            </div>
+            <div class="hv-card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="hv-label text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Critical Allergies</div>
+                        <div class="text-dark">{{ emergency.critical_allergies if emergency and emergency.critical_allergies else '<span class="empty-val">None reported</span>'|safe }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="hv-label"><i class="bi bi-capsule"></i> Critical Medications</div>
+                        <div class="text-dark">{{ emergency.critical_medications if emergency and emergency.critical_medications else '<span class="empty-val">None reported</span>'|safe }}</div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="hv-label"><i class="bi bi-clipboard2-pulse"></i> Major Conditions</div>
+                        <div class="text-dark">{{ emergency.major_conditions if emergency and emergency.major_conditions else '<span class="empty-val">None reported</span>'|safe }}</div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="hv-label"><i class="bi bi-info-circle"></i> Special Medical Notes</div>
+                        <div class="text-dark">{{ emergency.special_notes if emergency and emergency.special_notes else '<span class="empty-val">None</span>'|safe }}</div>
+                    </div>
+                    <div class="col-12 mt-3">
+                        {% if emergency and emergency.organ_donor %}
+                        <div class="fw-bold text-success"><i class="bi bi-gift-fill me-1"></i> Registered Organ Donor</div>
+                        {% else %}
+                        <div class="text-muted"><i class="bi bi-dash-circle me-1"></i> Not a registered organ donor</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="hv-card">
+            <div class="hv-card-header">
+                <h2 class="hv-card-title"><i class="bi bi-telephone-outbound text-teal me-2"></i> Emergency Contact</h2>
+            </div>
+            <div class="hv-card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="hv-label">Contact Name</div>
+                        <div class="text-dark">{{ emergency.emergency_contact_name if emergency and emergency.emergency_contact_name else '<span class="empty-val">Not provided</span>'|safe }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="hv-label">Relationship</div>
+                        <div class="text-dark">{{ emergency.emergency_contact_relation if emergency and emergency.emergency_contact_relation else '<span class="empty-val">-</span>'|safe }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="hv-label">Phone Number</div>
+                        <div class="text-dark">{{ emergency.emergency_contact_phone if emergency and emergency.emergency_contact_phone else '<span class="empty-val">Not provided</span>'|safe }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aadhaar Identity -->
+        <div class="hv-card">
+            <div class="hv-card-header">
+                <h2 class="hv-card-title"><i class="bi bi-fingerprint text-teal me-2"></i> Aadhaar Identity</h2>
+            </div>
+            <div class="hv-card-body">
+                <div class="row g-4 align-items-center">
+                    {% if patient.aadhaar_verified and patient.aadhaar_number %}
+                    <div class="col-auto">
+                        <span class="badge status-active px-3 py-2 fs-6">
+                            <i class="bi bi-patch-check-fill me-1"></i> Aadhaar Verified
+                        </span>
+                    </div>
+                    <div class="col">
+                        <div class="hv-label">Aadhaar Number (Masked)</div>
+                        <div class="fw-bold text-dark" style="letter-spacing:3px;font-size:1.1rem;">
+                            XXXX-XXXX-{{ patient.aadhaar_number[-4:] }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col">
+                        <div class="alert alert-warning d-flex gap-3 align-items-start mb-0" style="background-color: var(--hv-amber-light); border: 1px solid var(--hv-amber); color: var(--hv-text-1);">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 text-danger"></i>
+                            <div>
+                                <strong>Aadhaar not yet linked.</strong><br>
+                                <small>Click "Edit Profile" and complete the Aadhaar verification step to enable cross-hospital record lookup.</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= EDIT MODE ================= -->
+    <div id="editMode" style="display: none;">
+        <form method="POST" action="{{ url_for('patient.settings') }}">
+            
+            <!-- Personal Information -->
+            <div class="hv-card border-primary">
+                <div class="hv-card-header">
+                    <h2 class="hv-card-title"><i class="bi bi-person-vcard text-teal me-2"></i> Edit Personal Information</h2>
+                </div>
+                <div class="hv-card-body">
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label class="form-label hv-label">Full Name</label>
+                            <input type="text" class="form-control" value="{{ patient.full_name }}" disabled style="background: var(--hv-surface-2);">
+                            <div class="form-text mt-2"><i class="bi bi-info-circle"></i> Name changes require formal identity verification. Please contact support.</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label hv-label">Date of Birth</label>
+                            <input type="date" class="form-control" name="date_of_birth" value="{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label hv-label">Biological Sex</label>
+                            <select class="form-select" name="biological_sex">
+                                <option value="">Select...</option>
+                                <option value="male" {% if patient.biological_sex == 'male' %}selected{% endif %}>Male</option>
+                                <option value="female" {% if patient.biological_sex == 'female' %}selected{% endif %}>Female</option>
+                                <option value="other" {% if patient.biological_sex == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label hv-label">Blood Group</label>
+                            <select class="form-select" name="blood_group">
+                                <option value="">Unknown</option>
+                                {% for bg in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
+                                <option value="{{ bg }}" {% if patient.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label hv-label">Phone Number</label>
+                            <input type="text" class="form-control" name="phone" value="{{ patient.phone or '' }}" placeholder="+91 98765 43210">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label hv-label">City</label>
+                            <input type="text" class="form-control" name="city" value="{{ patient.city or '' }}" placeholder="e.g. Mumbai">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label hv-label">State</label>
+                            <input type="text" class="form-control" name="state" value="{{ patient.state or '' }}" placeholder="e.g. Maharashtra">
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label hv-label">Full Address</label>
+                            <input type="text" class="form-control" name="address" value="{{ patient.address or '' }}" placeholder="Enter full street address">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Data -->
+            <div class="hv-card border-primary">
+                <div class="hv-card-header">
+                    <h2 class="hv-card-title"><i class="bi bi-heart-pulse text-teal me-2"></i> Edit Emergency Profile</h2>
+                </div>
+                <div class="hv-card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Critical Allergies</label>
+                            <textarea class="form-control" name="critical_allergies" rows="2" placeholder="e.g. Penicillin, Peanuts">{{ emergency.critical_allergies if emergency else '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label hv-label"><i class="bi bi-capsule"></i> Critical Medications</label>
+                            <textarea class="form-control" name="critical_medications" rows="2" placeholder="e.g. Insulin, Aspirin">{{ emergency.critical_medications if emergency else '' }}</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label hv-label"><i class="bi bi-clipboard2-pulse"></i> Major Conditions</label>
+                            <textarea class="form-control" name="major_conditions" rows="2" placeholder="e.g. Type 2 Diabetes, Asthma">{{ emergency.major_conditions if emergency else '' }}</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label hv-label"><i class="bi bi-info-circle"></i> Special Medical Notes</label>
+                            <textarea class="form-control" name="special_notes" rows="2" placeholder="Any other critical instructions for paramedics...">{{ emergency.special_notes if emergency else '' }}</textarea>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <div class="form-check form-switch d-flex align-items-center gap-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="organDonorSwitch" name="organ_donor" style="width: 40px; height: 20px; cursor: pointer;" {% if emergency and emergency.organ_donor %}checked{% endif %}>
+                                <label class="form-check-label fw-bold text-success ms-2" for="organDonorSwitch" style="cursor: pointer; padding-top: 2px;">
+                                    <i class="bi bi-gift-fill"></i> Registered Organ Donor
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="hv-card border-primary">
+                <div class="hv-card-header">
+                    <h2 class="hv-card-title"><i class="bi bi-telephone-outbound text-teal me-2"></i> Edit Emergency Contact</h2>
+                </div>
+                
+                <div class="hv-card-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label hv-label">Contact Name</label>
+                            <input type="text" class="form-control" name="em_name" value="{{ emergency.emergency_contact_name if emergency else '' }}" placeholder="e.g. Jane Doe">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label hv-label">Relationship</label>
+                            <input type="text" class="form-control" name="em_relation" value="{{ emergency.emergency_contact_relation if emergency else '' }}" placeholder="e.g. Spouse, Parent">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label hv-label">Phone Number</label>
+                            <input type="text" class="form-control" name="em_phone" value="{{ emergency.emergency_contact_phone if emergency else '' }}" placeholder="+91 98765 43210">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aadhaar Edit -->
+            <div class="hv-card border-primary">
+                <div class="hv-card-header">
+                    <h2 class="hv-card-title"><i class="bi bi-fingerprint text-teal me-2"></i> Aadhaar Verification</h2>
+                    <p class="text-muted" style="margin-bottom: 0;">{% if patient.aadhaar_verified %}Your Aadhaar is linked as <strong>XXXX-XXXX-{{ patient.aadhaar_number[-4:] }}</strong>. Re-verify below to update it.{% else %}Link your 12-digit Aadhaar to enable cross-hospital patient lookup.{% endif %}</p>
+                </div>
+                <div class="hv-card-body">
+                    <div class="row g-2" id="settingsAadhaarRow">
+                        <div class="col-8">
+                            <input type="text" id="settingsAadhaarInput" maxlength="14" class="form-control" placeholder="Enter 12-digit Aadhaar" oninput="fmtAadhaarSettings(this)">
+                            <div class="form-text" id="settingsAadhaarStatus"></div>
+                        </div>
+                        <div class="col-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="sendSettingsOTP()" id="settingsSendOtpBtn">Send OTP</button>
+                        </div>
+                    </div>
+                    <div id="settingsOtpRow" style="display:none;margin-top:10px;">
+                        <div class="row g-2">
+                            <div class="col-8">
+                                <input type="text" id="settingsOtpInput" maxlength="6" class="form-control" placeholder="Enter OTP" style="letter-spacing:4px;font-size:1.1rem;text-align:center;">
+                                <div class="form-text text-info" id="settingsOtpHint"></div>
+                            </div>
+                            <div class="col-4">
+                                <button type="button" class="btn btn-success w-100" onclick="verifySettingsOTP()" id="settingsVerifyBtn">Verify & Link</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="settingsVerifiedBadge" style="display:none;margin-top:10px;">
+                        <div class="alert alert-success py-2 px-3 mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-patch-check-fill"></i><strong>Aadhaar linked and verified!</strong>
+                            <span class="ms-auto text-muted small" id="settingsAadhaarMasked"></span>
+                        </div>
+                    </div>
+                    <div class="form-text mt-2" style="font-size:.7rem;color:var(--hv-text-3);">⚠️ Demo simulation — Real UIDAI API requires a government-issued AUA licence.</div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3 mb-5">
+                <button type="button" class="btn btn-ghost px-4 fw-bold" onclick="toggleEditMode(false)">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary px-5 shadow-sm fw-bold">
+                    <i class="bi bi-check2-circle me-1"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleEditMode(showEdit) {
+    document.getElementById('viewMode').style.display = showEdit ? 'none' : 'block';
+    document.getElementById('viewActions').style.display = showEdit ? 'none' : 'block';
+    document.getElementById('editMode').style.display = showEdit ? 'block' : 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Aadhaar helpers (settings page) ──────────────────────────────────────────
+function fmtAadhaarSettings(input) {
+    let digits = input.value.replace(/\D/g, '').substring(0, 12);
+    let parts = [];
+    for (let i = 0; i < digits.length; i += 4) parts.push(digits.substring(i, i + 4));
+    input.value = parts.join('-');
+    input.dataset.digits = digits;
+}
+
+function rawSettingsAadhaar() {
+    const el = document.getElementById('settingsAadhaarInput');
+    return (el.dataset.digits || el.value.replace(/\D/g, ''));
+}
+
+function sendSettingsOTP() {
+    const aadhaar = rawSettingsAadhaar();
+    if (aadhaar.length !== 12) {
+        document.getElementById('settingsAadhaarStatus').innerHTML = '<span class="text-danger">Please enter a valid 12-digit Aadhaar number.</span>';
+        return;
+    }
+    const btn = document.getElementById('settingsSendOtpBtn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('/api/aadhaar/send-otp', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({aadhaar_number: aadhaar})
+    }).then(r => r.json()).then(data => {
+        btn.disabled = false; btn.textContent = 'Resend OTP';
+        if (data.success) {
+            document.getElementById('settingsOtpRow').style.display = 'block';
+            document.getElementById('settingsAadhaarStatus').innerHTML = '<span class="text-success">OTP sent!</span>';
+            document.getElementById('settingsOtpHint').textContent = '🛈 Demo OTP: ' + data.otp;
+        } else {
+            document.getElementById('settingsAadhaarStatus').innerHTML = '<span class="text-danger">' + data.error + '</span>';
+        }
+    }).catch(() => { btn.disabled = false; btn.textContent = 'Send OTP'; });
+}
+
+function verifySettingsOTP() {
+    const aadhaar = rawSettingsAadhaar();
+    const otp = document.getElementById('settingsOtpInput').value.trim();
+    const btn = document.getElementById('settingsVerifyBtn');
+    btn.disabled = true; btn.textContent = 'Verifying…';
+    fetch('/api/aadhaar/verify-and-save', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({aadhaar_number: aadhaar, otp: otp})
+    }).then(r => r.json()).then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            document.getElementById('settingsOtpRow').style.display = 'none';
+            document.getElementById('settingsAadhaarRow').style.display = 'none';
+            document.getElementById('settingsVerifiedBadge').style.display = 'block';
+            document.getElementById('settingsAadhaarMasked').textContent = data.masked;
+        } else {
+            btn.textContent = 'Verify & Link';
+            document.getElementById('settingsOtpHint').innerHTML = '<span class="text-danger">' + data.error + '</span>';
+        }
+    }).catch(() => { btn.disabled = false; btn.textContent = 'Verify & Link'; });
+}
+</script>
+{% endblock %}

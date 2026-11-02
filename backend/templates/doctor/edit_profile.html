@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+{% block title %}Edit Professional Profile — HealthVault{% endblock %}
+
+{% block content %}
+<style>
+/* ── Edit Profile Page — Scoped Styles ── */
+.ep-page { padding: 0 2px; }
+
+/* Page header */
+.ep-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.ep-title  { font-size: 1.65rem; font-weight: 700; color: var(--hv-text-1); margin: 0 0 3px; }
+.ep-sub    { font-size: 0.9rem; color: var(--hv-text-2); margin: 0; }
+
+/* Shared card */
+.ep-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 1px 4px rgba(10,22,40,.04);
+}
+
+/* Section title inside card */
+.ep-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.97rem; font-weight: 700; color: var(--hv-text-1);
+  margin: 0 0 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #EEF2F7;
+}
+.ep-section-title i { color: #1677F5; font-size: 1rem; }
+
+/* Form label */
+.ep-label {
+  display: block;
+  font-size: 0.76rem; font-weight: 600;
+  color: #516987;
+  text-transform: uppercase; letter-spacing: .04em;
+  margin-bottom: 6px;
+}
+.ep-label .req { color: #DC2626; margin-left: 2px; }
+
+/* Inputs / selects / textarea */
+.ep-input, .ep-select, .ep-textarea {
+  display: block; width: 100%;
+  height: 46px;
+  background: #F8FAFC;
+  border: 1px solid #D8E1EA;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 0.93rem; font-weight: 500;
+  color: #0F2236;
+  transition: border-color .15s, box-shadow .15s;
+  appearance: none;
+}
+.ep-textarea {
+  height: auto; padding: 12px 14px; resize: vertical;
+}
+.ep-input:focus, .ep-select:focus, .ep-textarea:focus {
+  outline: none;
+  border-color: #1677F5;
+  box-shadow: 0 0 0 3px rgba(22,119,245,.10);
+  background: #fff;
+}
+.ep-input::placeholder, .ep-textarea::placeholder { color: #9EB3C8; font-weight: 400; }
+
+/* Select arrow */
+.ep-select-wrap { position: relative; }
+.ep-select-wrap::after {
+  content: '\f282';
+  font-family: 'bootstrap-icons';
+  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+  color: #9EB3C8; font-size: 0.8rem; pointer-events: none;
+}
+.ep-select { padding-right: 36px; cursor: pointer; }
+
+/* Field group */
+.ep-field { margin-bottom: 18px; }
+.ep-field:last-child { margin-bottom: 0; }
+
+/* Photo card */
+.ep-photo-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(10,22,40,.04);
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+.ep-photo-ring {
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  background: #EEF6FF;
+  border: 3px solid #BFDBFE;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;
+  position: relative;
+}
+.ep-photo-ring img { width:100%; height:100%; object-fit:cover; }
+.ep-photo-placeholder { font-size: 4rem; color: #93C5FD; }
+
+.ep-file-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #F0F4F8; color: var(--hv-text-2);
+  border: 1px solid #D8E1EA; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 600;
+  padding: 8px 16px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.ep-file-btn:hover { background: #E6EDF5; border-color: #B8C9D9; }
+.ep-file-input { display: none; }
+.ep-photo-hint { font-size: 0.8rem; color: var(--hv-text-3); margin-top: 8px; }
+.ep-photo-name { font-size: 0.8rem; color: #1677F5; margin-top: 5px; font-weight: 500; word-break: break-all; }
+
+/* Consultation type segmented */
+.ep-consult-type { display: flex; gap: 10px; flex-wrap: wrap; }
+.ep-consult-opt  { display: none; }
+.ep-consult-lbl  {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #F8FAFC; color: var(--hv-text-2);
+  border: 1.5px solid #D8E1EA; border-radius: 8px;
+  font-size: 0.88rem; font-weight: 600;
+  padding: 10px 16px; cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+.ep-consult-opt:checked + .ep-consult-lbl {
+  background: #EEF6FF; color: #1677F5; border-color: #93C5FD;
+}
+.ep-consult-lbl i { font-size: 0.95rem; }
+
+/* Action bar */
+.ep-action-bar {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 12px; margin-top: 24px; padding-top: 20px;
+  border-top: 1px solid #EEF2F7;
+}
+.ep-btn-cancel {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #fff; color: var(--hv-text-2);
+  border: 1.5px solid #D8E1EA; border-radius: 10px;
+  font-size: 0.9rem; font-weight: 600;
+  padding: 11px 22px; text-decoration: none;
+  transition: background .15s, border-color .15s;
+}
+.ep-btn-cancel:hover { background: #F4F7FB; border-color: #B8C9D9; color: var(--hv-text-1); }
+.ep-btn-save {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--hv-navy, #0A1628); color: #fff;
+  border: none; border-radius: 10px;
+  font-size: 0.9rem; font-weight: 700;
+  padding: 11px 28px; cursor: pointer;
+  transition: opacity .15s;
+}
+.ep-btn-save:hover { opacity: .88; }
+
+/* Right column top action row (cancel, visible in header on desktop) */
+.ep-header-cancel {
+  display: inline-flex; align-items: center;
+  background: #fff; color: var(--hv-text-2);
+  border: 1.5px solid #D8E1EA; border-radius: 10px;
+  font-size: 0.88rem; font-weight: 600;
+  padding: 9px 20px; text-decoration: none;
+  transition: background .15s;
+}
+.ep-header-cancel:hover { background: #F4F7FB; color: var(--hv-text-1); }
+
+/* Row helpers */
+.ep-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ep-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+@media (max-width: 767px) {
+  .ep-row-2 { grid-template-columns: 1fr; }
+  .ep-row-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .ep-row-3 { grid-template-columns: 1fr; }
+  .ep-card, .ep-photo-card { padding: 18px; }
+  .ep-action-bar { flex-direction: column; }
+  .ep-btn-cancel, .ep-btn-save { width: 100%; justify-content: center; }
+}
+</style>
+
+<div class="ep-page">
+
+  <!-- Page Header -->
+  <div class="ep-header">
+    <div>
+      <h1 class="ep-title">Edit Professional Profile</h1>
+      <p class="ep-sub">Update your professional details to help patients find and understand your practice.</p>
+    </div>
+    <a href="{{ url_for('doctor.profile') }}" class="ep-header-cancel">
+      <i class="bi bi-x me-1"></i> Cancel
+    </a>
+  </div>
+
+  <form method="POST" action="{{ url_for('doctor.edit_profile') }}" enctype="multipart/form-data" id="editProfileForm">
+
+    <div class="row g-4">
+
+      <!-- ── Left: Profile Photo ── -->
+      <div class="col-lg-3 col-md-4">
+        <div class="ep-photo-card" style="position: sticky; top: 80px;">
+          <h4 class="ep-section-title" style="align-self: flex-start; width: 100%;">
+            <i class="bi bi-person-circle"></i> Profile Photo
+          </h4>
+
+          <!-- Photo preview -->
+          <div class="ep-photo-ring" id="photoRing">
+            {% if provider.profile_photo %}
+              <img id="photoPreview"
+                   src="{{ url_for('uploaded_file', filename=provider.profile_photo) }}"
+                   alt="Profile Photo"
+                   onerror="this.style.display='none'; document.getElementById('photoIcon').style.display='flex';">
+              <i class="bi bi-person-fill ep-photo-placeholder" id="photoIcon" style="display:none;"></i>
+            {% else %}
+              <i class="bi bi-person-fill ep-photo-placeholder" id="photoIcon"></i>
+              <img id="photoPreview" src="" alt="" style="display:none;">
+            {% endif %}
+          </div>
+
+          <!-- Upload button -->
+          <label class="ep-file-btn" for="profile_photo">
+            <i class="bi bi-upload"></i> Choose Photo
+          </label>
+          <input type="file" name="profile_photo" id="profile_photo"
+                 class="ep-file-input" accept="image/jpeg,image/png,image/webp"
+                 onchange="previewPhoto(this)">
+
+          <p class="ep-photo-hint">JPG or PNG · Max 5 MB</p>
+          <p class="ep-photo-name" id="photoFilename"></p>
+        </div>
+      </div>
+
+      <!-- ── Right: All Sections ── -->
+      <div class="col-lg-9 col-md-8">
+
+        <!-- Personal & Professional -->
+        <div class="ep-card mb-4">
+          <h4 class="ep-section-title">
+            <i class="bi bi-person-badge"></i> Personal &amp; Professional
+          </h4>
+
+          <div class="ep-row-2 mb-4">
+            <div class="ep-field">
+              <label class="ep-label" for="full_name">Full Name <span class="req">*</span></label>
+              <input class="ep-input" type="text" id="full_name" name="full_name"
+                     value="{{ provider.full_name }}" placeholder="Dr. Full Name" required>
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="gender">Gender</label>
+              <div class="ep-select-wrap">
+                <select class="ep-select" id="gender" name="gender">
+                  <option value="">Select gender</option>
+                  <option value="Male"   {% if provider.gender == 'Male'   %}selected{% endif %}>Male</option>
+                  <option value="Female" {% if provider.gender == 'Female' %}selected{% endif %}>Female</option>
+                  <option value="Other"  {% if provider.gender == 'Other'  %}selected{% endif %}>Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="ep-row-2 mb-4">
+            <div class="ep-field">
+              <label class="ep-label" for="specialty">Specialization <span class="req">*</span></label>
+              <input class="ep-input" type="text" id="specialty" name="specialty"
+                     value="{{ provider.specialty or '' }}" placeholder="e.g. Cardiologist" required>
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="registration_number">Medical Registration Number</label>
+              <input class="ep-input" type="text" id="registration_number" name="registration_number"
+                     value="{{ provider.registration_number or '' }}" placeholder="e.g. MCI-12345">
+            </div>
+          </div>
+
+          <div class="ep-row-2 mb-4">
+            <div class="ep-field">
+              <label class="ep-label" for="qualifications">Qualifications</label>
+              <input class="ep-input" type="text" id="qualifications" name="qualifications"
+                     value="{{ provider.qualifications or '' }}" placeholder="e.g. MBBS, MD, DM">
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="experience_years">Years of Experience</label>
+              <input class="ep-input" type="number" id="experience_years" name="experience_years"
+                     value="{{ provider.experience_years or '' }}" min="0" placeholder="e.g. 12">
+            </div>
+          </div>
+
+          <div class="ep-row-2 mb-4">
+            <div class="ep-field">
+              <label class="ep-label" for="languages">Languages Spoken</label>
+              <input class="ep-input" type="text" id="languages" name="languages"
+                     value="{{ provider.languages or '' }}" placeholder="e.g. English, Hindi">
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="phone">Contact Phone</label>
+              <input class="ep-input" type="text" id="phone" name="phone"
+                     value="{{ provider.phone or '' }}" placeholder="+91-98765-00000">
+            </div>
+          </div>
+
+          <div class="ep-field">
+            <label class="ep-label" for="bio">Professional Bio</label>
+            <textarea class="ep-textarea" id="bio" name="bio" rows="4"
+                      placeholder="Tell patients about your expertise, approach and practice...">{{ provider.bio or '' }}</textarea>
+          </div>
+        </div>
+
+        <!-- Practice Information -->
+        <div class="ep-card mb-4">
+          <h4 class="ep-section-title">
+            <i class="bi bi-hospital"></i> Practice Information
+          </h4>
+
+          <div class="ep-field">
+            <label class="ep-label" for="hospital_name">Hospital / Clinic Name</label>
+            <input class="ep-input" type="text" id="hospital_name" name="hospital_name"
+                   value="{% if provider.organization %}{{ provider.organization.name }}{% endif %}"
+                   placeholder="e.g. CityCare Heart Institute">
+          </div>
+
+          <div class="ep-field">
+            <label class="ep-label" for="address">Street Address</label>
+            <input class="ep-input" type="text" id="address" name="address"
+                   value="{% if provider.organization %}{{ provider.organization.address or '' }}{% endif %}"
+                   placeholder="Building, Street, Area">
+          </div>
+
+          <div class="ep-row-3">
+            <div class="ep-field">
+              <label class="ep-label" for="city">City</label>
+              <input class="ep-input" type="text" id="city" name="city"
+                     value="{% if provider.organization %}{{ provider.organization.city or '' }}{% endif %}"
+                     placeholder="City">
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="state">State</label>
+              <input class="ep-input" type="text" id="state" name="state"
+                     value="{% if provider.organization %}{{ provider.organization.state or '' }}{% endif %}"
+                     placeholder="State">
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="pincode">Pincode</label>
+              <input class="ep-input" type="text" id="pincode" name="pincode"
+                     value="{% if provider.organization %}{{ provider.organization.pincode or '' }}{% endif %}"
+                     placeholder="000000" maxlength="6">
+            </div>
+          </div>
+        </div>
+
+        <!-- Consultation & Services -->
+        <div class="ep-card mb-4">
+          <h4 class="ep-section-title">
+            <i class="bi bi-currency-rupee" style="color:#059669;"></i> Consultation &amp; Services
+          </h4>
+
+          <div class="ep-row-2 mb-4">
+            <div class="ep-field">
+              <label class="ep-label" for="consultation_fee">Consultation Fee (₹)</label>
+              <input class="ep-input" type="number" id="consultation_fee" name="consultation_fee"
+                     value="{{ provider.consultation_fee or '' }}" min="0" step="50"
+                     placeholder="e.g. 800">
+            </div>
+            <div class="ep-field">
+              <label class="ep-label">Consultation Type</label>
+              <!-- Segmented control — value posted via hidden input updated by JS -->
+              <div class="ep-consult-type" id="consultTypeGroup">
+                <input type="radio" name="consultation_type" id="ct_inperson" class="ep-consult-opt"
+                       value="In-person" {% if provider.consultation_type == 'In-person' %}checked{% endif %}>
+                <label class="ep-consult-lbl" for="ct_inperson">
+                  <i class="bi bi-person-fill"></i> In-person
+                </label>
+
+                <input type="radio" name="consultation_type" id="ct_online" class="ep-consult-opt"
+                       value="Online" {% if provider.consultation_type == 'Online' %}checked{% endif %}>
+                <label class="ep-consult-lbl" for="ct_online">
+                  <i class="bi bi-camera-video-fill"></i> Online
+                </label>
+
+                <input type="radio" name="consultation_type" id="ct_both" class="ep-consult-opt"
+                       value="Both" {% if provider.consultation_type == 'Both' %}checked{% endif %}>
+                <label class="ep-consult-lbl" for="ct_both">
+                  <i class="bi bi-arrows-expand-vertical"></i> Both
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="ep-field">
+            <label class="ep-label" for="services">Services Provided</label>
+            <input class="ep-input" type="text" id="services" name="services"
+                   value="{{ provider.services or '' }}"
+                   placeholder="Comma-separated, e.g. Cardiology consultation, ECG, Heart health assessment">
+            <p style="font-size:0.78rem; color:var(--hv-text-3); margin-top:5px; margin-bottom:0;">
+              Separate multiple services with commas.
+            </p>
+          </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="ep-card">
+          <h4 class="ep-section-title">
+            <i class="bi bi-clock-fill" style="color:#D97706;"></i> Availability
+          </h4>
+
+          <div class="ep-row-3">
+            <div class="ep-field">
+              <label class="ep-label" for="working_days">Working Days</label>
+              <input class="ep-input" type="text" id="working_days" name="working_days"
+                     value="{{ provider.working_days or '' }}" placeholder="e.g. Monday–Saturday">
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="working_hours">Working Hours</label>
+              <input class="ep-input" type="text" id="working_hours" name="working_hours"
+                     value="{{ provider.working_hours or '' }}" placeholder="e.g. 10:00 AM – 6:00 PM">
+            </div>
+            <div class="ep-field">
+              <label class="ep-label" for="slot_duration">Slot Duration</label>
+              <div class="ep-select-wrap">
+                <select class="ep-select" id="slot_duration" name="slot_duration">
+                  <option value="">Select</option>
+                  <option value="10"  {% if provider.slot_duration == 10  %}selected{% endif %}>10 minutes</option>
+                  <option value="15"  {% if provider.slot_duration == 15  %}selected{% endif %}>15 minutes</option>
+                  <option value="20"  {% if provider.slot_duration == 20  %}selected{% endif %}>20 minutes</option>
+                  <option value="30"  {% if provider.slot_duration == 30  %}selected{% endif %}>30 minutes</option>
+                  <option value="60"  {% if provider.slot_duration == 60  %}selected{% endif %}>60 minutes</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="ep-action-bar">
+            <a href="{{ url_for('doctor.profile') }}" class="ep-btn-cancel">
+              Cancel
+            </a>
+            <button type="submit" class="ep-btn-save">
+              <i class="bi bi-check2"></i> Save Changes
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /right col -->
+    </div><!-- /row -->
+  </form>
+
+</div><!-- /ep-page -->
+
+<script>
+/* ── Instant photo preview ── */
+function previewPhoto(input) {
+  const preview = document.getElementById('photoPreview');
+  const icon    = document.getElementById('photoIcon');
+  const label   = document.getElementById('photoFilename');
+
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      if (icon) icon.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    label.textContent = file.name;
+  }
+}
+</script>
+{% endblock %}

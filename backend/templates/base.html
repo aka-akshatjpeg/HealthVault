@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HealthVault{% endblock %}</title>
+
+    <!-- Prevent browser from caching authenticated pages (stops back-button re-login) -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/healthvault.css') }}?v=6.0" rel="stylesheet">
+
+    <!-- Apple-Style UI Overrides -->
+    <style id="apple-layout-styles">
+        :root {
+            --apple-bg-light: #F2F2F7;
+            --apple-bg-dark: #000000;
+            --apple-panel-light: rgba(255, 255, 255, 0.7);
+            --apple-panel-dark: rgba(28, 28, 30, 0.7);
+            --accent-blue: #007AFF;
+            --shadow-diffuse: 0 8px 32px rgba(0,0,0,0.05);
+        }
+
+        /* 1. Reset Typography & Backgrounds */
+        body {
+            background-image: none !important;
+            background-color: var(--apple-bg-light) !important;
+            font-family: 'Inter', sans-serif !important;
+            letter-spacing: -0.03em;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body.dark-mode {
+            background-color: var(--apple-bg-dark) !important;
+            background-image: none !important;
+        }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+            font-weight: 800 !important;
+            letter-spacing: -0.03em !important;
+        }
+
+        /* 2. Floating Layout Wrappers */
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            padding: 24px !important;
+            gap: 24px !important;
+            background: transparent !important;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        /* 3. Floating Glass Sidebar */
+        .sidebar {
+            position: relative !important;
+            height: 100% !important;
+            width: 260px;
+            border-radius: 32px !important;
+            background: var(--apple-panel-light) !important;
+            backdrop-filter: blur(40px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+            border: 1px solid rgba(0,0,0,0.05) !important;
+            box-shadow: var(--shadow-diffuse) !important;
+            margin: 0 !important;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+            transform: none !important;
+        }
+        body.dark-mode .sidebar {
+            background: var(--apple-panel-dark) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            box-shadow: none !important;
+        }
+
+        /* Clean Sidebar Minimize Implementation */
+        body.sidebar-minimized .sidebar {
+            width: 88px !important;
+        }
+        body.sidebar-minimized .nav-text,
+        body.sidebar-minimized .nav-section-label,
+        body.sidebar-minimized .sidebar-brand-text,
+        body.sidebar-minimized .nav-badge {
+            display: none !important;
+        }
+        body.sidebar-minimized .sidebar-nav .nav-link {
+            justify-content: center !important;
+            padding: 12px !important;
+            margin: 8px 16px !important;
+        }
+        body.sidebar-minimized .sidebar-nav .nav-link i {
+            margin: 0 !important;
+            font-size: 1.3rem !important;
+        }
+        body.sidebar-minimized .sidebar-logo {
+            justify-content: center !important;
+            padding: 20px 0 !important;
+        }
+        body.sidebar-minimized .sidebar-minimize-btn {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Active Link Pill */
+        .sidebar-nav .nav-link {
+            border-radius: 999px !important;
+            margin: 4px 16px !important;
+            padding: 10px 16px !important;
+            border-left: none !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-nav .nav-link:hover {
+            background: rgba(0,0,0,0.05) !important;
+        }
+        body.dark-mode .sidebar-nav .nav-link:hover {
+            background: rgba(255,255,255,0.1) !important;
+        }
+        .sidebar-nav .nav-link.active {
+            background-color: var(--accent-blue) !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3) !important;
+        }
+        .sidebar-nav .nav-link.active i, .sidebar-nav .nav-link.active span {
+            color: #FFFFFF !important;
+        }
+        body.dark-mode .sidebar-nav .nav-link.active {
+            box-shadow: none !important;
+        }
+        .sidebar-nav .nav-link i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        /* 4. Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100%;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+            position: relative;
+        }
+
+        /* 5. Floating Glass Topbar */
+        .topbar {
+            border-radius: 999px !important;
+            background: var(--apple-panel-light) !important;
+            backdrop-filter: blur(40px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+            border: 1px solid rgba(0,0,0,0.05) !important;
+            box-shadow: var(--shadow-diffuse) !important;
+            margin: 0 0 24px 0 !important;
+            padding: 12px 24px !important;
+            position: relative !important;
+            width: 100% !important;
+            top: 0 !important;
+            left: 0 !important;
+            display: flex;
+            align-items: center;
+            z-index: 90;
+        }
+        body.dark-mode .topbar {
+            background: var(--apple-panel-dark) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            box-shadow: none !important;
+        }
+
+        /* 6. Page Content Flowing Area */
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            border-radius: 32px;
+            padding: 24px;
+            scrollbar-width: thin;
+        }
+
+        /* Button pill overrides */
+        .btn { border-radius: 999px !important; }
+        .badge { border-radius: 999px !important; }
+
+        /* Mobile fixes */
+        @media (max-width: 991.98px) {
+            .app-layout {
+                padding: 16px !important;
+                gap: 16px !important;
+                flex-direction: column;
+            }
+            .sidebar {
+                position: fixed !important;
+                left: 16px !important;
+                top: 16px !important;
+                bottom: 16px !important;
+                height: calc(100vh - 32px) !important;
+                z-index: 1050;
+                transform: translateX(-120%) !important;
+            }
+            body.sidebar-open .sidebar {
+                transform: translateX(0) !important;
+            }
+            .topbar {
+                margin: 0 0 16px 0 !important;
+                flex-shrink: 0;
+            }
+            .main-content {
+                height: calc(100vh - 32px);
+            }
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+
+    <!-- Apply dark mode BEFORE render if user has saved preference (default = light) -->
+    <script>
+        if (localStorage.getItem('hv-theme') === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+        }
+    </script>
+</head>
+<body>
+    <!-- Apply to body too (eliminates any flash) -->
+    <script>
+        if (localStorage.getItem('hv-theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+
+{% if current_user.is_authenticated %}
+<!-- ===================================================================
+     AUTHENTICATED LAYOUT — Sidebar + Main Content
+     =================================================================== -->
+<div class="app-layout">
+
+    <!-- ── SIDEBAR ──────────────────────────────────────────────────── -->
+    <nav class="sidebar" id="sidebar">
+
+        <!-- Logo -->
+        <div class="sidebar-logo p-4 d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('patient.dashboard') if current_user.role == 'patient' else url_for('doctor.dashboard') if current_user.role == 'doctor' else url_for('lab.dashboard') }}"
+               class="text-decoration-none d-flex align-items-center gap-2 sidebar-brand-link">
+                <img src="{{ url_for('static', filename='img/logo.png') }}"
+                     alt="HealthVault" style="height:40px;object-fit:contain;border-radius:10px;" class="sidebar-logo-img">
+                <div class="sidebar-brand-text">
+                    <div class="logo-text fw-bold text-dark dark-mode-white" style="font-size: 1.1rem;">HealthVault</div>
+                    <div class="logo-sub text-muted" style="font-size: 0.8rem;">
+                        {% if current_user.role == 'patient' %}Patient Portal
+                        {% elif current_user.role == 'doctor' %}Doctor Portal
+                        {% elif current_user.role == 'lab' %}Lab Portal
+                        {% else %}Admin{% endif %}
+                    </div>
+                </div>
+            </a>
+            <button class="sidebar-minimize-btn btn btn-sm btn-light border-0 shadow-sm d-none d-lg-flex align-items-center justify-content-center" id="sidebarMinimizeBtn" onclick="toggleSidebarMinimize()" title="Collapse sidebar" style="width:32px; height:32px; border-radius:50% !important;">
+                <i class="bi bi-layout-sidebar-reverse text-secondary" id="minimizeIcon"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <ul class="sidebar-nav list-unstyled mb-4 flex-grow-1 overflow-auto">
+            {% if current_user.role == 'patient' %}
+
+            <li class="nav-section-label px-4 mt-2 mb-2 text-muted fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Overview</li>
+            <li class="nav-item">
+                <a href="{{ url_for('patient.dashboard') }}"
+                   class="nav-link {% if request.endpoint == 'patient.dashboard' %}active{% endif %}">
+                    <i class="bi bi-grid"></i> <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('ai.assistant_page') }}"
+                   class="nav-link {% if request.endpoint == 'ai.assistant_page' %}active{% endif %}">
+                    <i class="bi bi-robot" style="color:#a5b4fc;"></i> <span class="nav-text">AI Assistant</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.health_id') }}"
+                   class="nav-link {% if request.endpoint == 'patient.health_id' %}active{% endif %}">
+                    <i class="bi bi-qr-code"></i> <span class="nav-text">My HealthVault ID</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.timeline') }}"
+                   class="nav-link {% if request.endpoint == 'patient.timeline' %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i> <span class="nav-text">Health Timeline</span>
+                </a>
+            </li>
+
+            <li class="nav-section-label px-4 mt-4 mb-2 text-muted fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Health Records</li>
+            <li>
+                <a href="{{ url_for('patient.lab_reports') }}"
+                   class="nav-link {% if request.endpoint == 'patient.lab_reports' %}active{% endif %}">
+                    <i class="bi bi-flask"></i> <span class="nav-text">Lab Reports</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.medications') }}"
+                   class="nav-link {% if request.endpoint == 'patient.medications' %}active{% endif %}">
+                    <i class="bi bi-capsule"></i> <span class="nav-text">Medications</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.conditions') }}"
+                   class="nav-link {% if request.endpoint == 'patient.conditions' %}active{% endif %}">
+                    <i class="bi bi-heart-pulse"></i> <span class="nav-text">Conditions</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.allergies') }}"
+                   class="nav-link {% if request.endpoint == 'patient.allergies' %}active{% endif %}">
+                    <i class="bi bi-exclamation-triangle"></i> <span class="nav-text">Allergies</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.vaccinations') }}"
+                   class="nav-link {% if request.endpoint == 'patient.vaccinations' %}active{% endif %}">
+                    <i class="bi bi-syringe"></i> <span class="nav-text">Vaccinations</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.procedures') }}"
+                   class="nav-link {% if request.endpoint == 'patient.procedures' %}active{% endif %}">
+                    <i class="bi bi-scissors"></i> <span class="nav-text">Surgeries &amp; Procedures</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('documents.vault') }}"
+                   class="nav-link {% if 'documents' in request.endpoint %}active{% endif %}">
+                    <i class="bi bi-folder2-open"></i> <span class="nav-text">Documents</span>
+                </a>
+            </li>
+
+            <li class="nav-section-label px-4 mt-4 mb-2 text-muted fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Summary &amp; Sharing</li>
+            <li>
+                <a href="{{ url_for('patient.health_summary') }}"
+                   class="nav-link {% if request.endpoint == 'patient.health_summary' %}active{% endif %}">
+                    <i class="bi bi-file-medical"></i> <span class="nav-text">Health Summary</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('consent.requests') }}"
+                   class="nav-link {% if 'consent' in request.endpoint %}active{% endif %}">
+                    <i class="bi bi-shield-check"></i> <span class="nav-text">Share &amp; Consent</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('patient.access_history') }}"
+                   class="nav-link {% if request.endpoint == 'patient.access_history' %}active{% endif %}">
+                    <i class="bi bi-list-check"></i> <span class="nav-text">Access History</span>
+                </a>
+            </li>
+
+            <li class="nav-section-label px-4 mt-4 mb-2 text-muted fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Emergency</li>
+            <li>
+                <a href="{{ url_for('patient.emergency_card') }}"
+                   class="nav-link {% if request.endpoint == 'patient.emergency_card' %}active{% endif %}"
+                   style="color:#ef4444;">
+                    <i class="bi bi-heart-pulse-fill" style="color:#ef4444;"></i> <span class="nav-text">Emergency Card</span>
+                </a>
+            </li>
+
+            <li class="nav-section-label px-4 mt-4 mb-2 text-muted fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Notifications</li>
+            <li>
+                <a href="{{ url_for('patient.notifications') }}"
+                   class="nav-link {% if request.endpoint == 'patient.notifications' %}active{% endif %}">
+                    <i class="bi bi-bell"></i> <span class="nav-text">Notifications</span>
+                    {% if unread_count and unread_count > 0 %}
+                    <span class="badge bg-danger ms-auto nav-badge" style="font-size:.65rem;">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
+
+            {% elif current_user.role == 'doctor' %}
+            <li class="nav-section-label px-4 mt-2 mb-2 text-muted fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Doctor Portal</li>
+            <li>
+                <a href="{{ url_for('doctor.dashboard') }}"
+                   class="nav-link {% if request.endpoint == 'doctor.dashboard' %}active{% endif %}">
+                    <i class="bi bi-grid-1x2"></i> <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('doctor.patient_search') }}"
+                   class="nav-link {% if request.endpoint == 'doctor.patient_search' %}active{% endif %}">
+                    <i class="bi bi-search"></i> <span class="nav-text">Search Patient</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('doctor.history') }}"
+                   class="nav-link {% if request.endpoint == 'doctor.history' %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i> <span class="nav-text">Patient History</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('doctor.add_condition') }}"
+                   class="nav-link {% if request.endpoint == 'doctor.add_condition' %}active{% endif %}">
+                    <i class="bi bi-plus-circle"></i> <span class="nav-text">Add Condition</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('doctor.add_medication') }}"
+                   class="nav-link {% if request.endpoint == 'doctor.add_medication' %}active{% endif %}">
+                    <i class="bi bi-capsule"></i> <span class="nav-text">Add Medication</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('doctor.profile') }}"
+                   class="nav-link {% if request.endpoint in ['doctor.profile', 'doctor.edit_profile'] %}active{% endif %}">
+                    <i class="bi bi-person-badge"></i> <span class="nav-text">My Profile</span>
+                </a>
+            </li>
+
+            {% elif current_user.role == 'lab' %}
+            <li class="nav-section-label px-4 mt-2 mb-2 text-muted fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Lab Portal</li>
+            <li>
+                <a href="{{ url_for('lab.dashboard') }}"
+                   class="nav-link {% if request.endpoint == 'lab.dashboard' %}active{% endif %}">
+                    <i class="bi bi-grid-1x2"></i> <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('lab.add_report') }}"
+                   class="nav-link {% if request.endpoint == 'lab.add_report' %}active{% endif %}">
+                    <i class="bi bi-plus-circle"></i> <span class="nav-text">Add Lab Report</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('lab.profile') }}"
+                   class="nav-link {% if request.endpoint in ['lab.profile', 'lab.edit_profile'] %}active{% endif %}">
+                    <i class="bi bi-building"></i> <span class="nav-text">Lab Profile</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- ── MAIN CONTENT ──────────────────────────────────────────────── -->
+    <main class="main-content">
+
+        <!-- Prototype Banner -->
+        <div class="prototype-banner text-center py-2 px-3 mb-3 rounded-pill bg-warning bg-opacity-25 text-dark fw-medium d-none d-lg-block w-fit-content mx-auto" style="backdrop-filter: blur(10px); font-size: 0.85rem;">
+            <i class="bi bi-flask me-1"></i>
+            <strong>Prototype Demo</strong> — Medical information shown is fictional.
+        </div>
+
+        <!-- Topbar -->
+        <div class="topbar">
+            <!-- Mobile: hamburger -->
+            <button class="btn btn-outline-secondary d-flex d-lg-none align-items-center justify-content-center border-0 bg-light"
+                    id="sidebarToggle" style="width:38px;height:38px;padding:0;border-radius:50% !important; flex-shrink: 0;">
+                <i class="bi bi-layout-sidebar"></i>
+            </button>
+
+            <!-- Search -->
+            <div class="topbar-search d-none d-md-block ms-lg-0 ms-3 position-relative">
+                {% if current_user.is_authenticated and current_user.role in ['patient', 'doctor', 'lab'] %}
+                <form action="{{ url_for('patient.search') if current_user.role == 'patient' else url_for('doctor.patient_search') }}" method="GET" id="globalSearchForm">
+                    <div class="input-group input-group-sm rounded-pill overflow-hidden border border-secondary border-opacity-25" style="width:260px; background: var(--apple-bg-light); position: relative; z-index: 1050;">
+                        <span class="input-group-text border-0 bg-transparent ps-3">
+                            <i class="bi bi-search text-muted" style="font-size:.9rem;"></i>
+                        </span>
+                        <input type="text"
+                               id="globalSearchInput"
+                               name="{% if current_user.role == 'patient' %}q{% else %}hv_id{% endif %}"
+                               class="form-control border-0 shadow-none bg-transparent py-2"
+                               placeholder="{% if current_user.role == 'patient' %}Search records...{% else %}Search by HV-ID...{% endif %}"
+                               autocomplete="off"
+                               required>
+                    </div>
+                    <!-- Live Search Dropdown -->
+                    <div id="liveSearchResults" class="dropdown-menu shadow-sm border-0 w-100 mt-2 py-2" style="position: absolute; top: 100%; left: 0; display: none; z-index: 1040; border-radius: 12px; max-height: 400px; overflow-y: auto; background: var(--hv-surface); border: 1px solid var(--hv-border) !important;">
+                        <div class="px-3 py-2 text-muted small" id="liveSearchStatus">Searching...</div>
+                        <div id="liveSearchList" class="list-group list-group-flush rounded-0"></div>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Right Actions -->
+            <div class="topbar-actions ms-auto d-flex align-items-center gap-3">
+
+                {% if current_user.role == 'patient' %}
+                <!-- Notification Bell -->
+                <a href="{{ url_for('patient.notifications') }}"
+                   class="topbar-icon-btn position-relative btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm border border-secondary border-opacity-10"
+                   title="Notifications" style="width: 40px; height: 40px;">
+                    <i class="bi bi-bell fs-5"></i>
+                    {% if unread_count and unread_count > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm"
+                          style="font-size:.6rem; padding:4px 6px; border: 2px solid var(--apple-panel-light);">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
+
+                <!-- User Avatar Dropdown -->
+                <div class="dropdown">
+                    <button class="topbar-avatar-btn dropdown-toggle btn btn-light rounded-pill d-flex align-items-center gap-2 p-1 pe-3 shadow-sm border border-secondary border-opacity-10" id="userDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false"
+                            data-bs-auto-close="outside">
+                        <div class="topbar-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div class="topbar-avatar-info d-none d-md-block text-start" style="line-height: 1.2;">
+                            <div class="topbar-avatar-name fw-bold" style="font-size: 0.85rem; color: var(--text-primary);">
+                                {% if current_user.role == 'patient' and current_user.patient %}
+                                    {{ current_user.patient.full_name.split()[0] }}
+                                {% elif current_user.role in ['doctor','lab'] and current_user.provider %}
+                                    {{ current_user.provider.full_name.split()[0] }}
+                                {% else %}
+                                    {{ current_user.email.split('@')[0] }}
+                                {% endif %}
+                            </div>
+                            <div class="topbar-avatar-role text-muted" style="font-size: 0.7rem;">{{ current_user.role|capitalize }}</div>
+                        </div>
+                        <i class="bi bi-chevron-down topbar-avatar-chevron d-none d-md-block text-muted ms-1" style="font-size: 0.8rem;"></i>
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end topbar-dropdown shadow-lg border-0 mt-2" aria-labelledby="userDropdown" style="border-radius: 20px; padding: 12px; min-width: 240px; background: var(--apple-panel-light); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%);">
+                        <!-- Profile Header -->
+                        <li class="topbar-dropdown-header d-flex align-items-center gap-3 px-3 py-2">
+                            <div class="topbar-dropdown-avatar bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fs-3" style="width: 48px; height: 48px;">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold" style="color: var(--text-primary); font-size:.95rem;">
+                                    {% if current_user.role == 'patient' and current_user.patient %}
+                                        {{ current_user.patient.full_name }}
+                                    {% elif current_user.role in ['doctor','lab'] and current_user.provider %}
+                                        {{ current_user.provider.full_name }}
+                                    {% else %}
+                                        {{ current_user.email }}
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted" style="font-size:.8rem;">{{ current_user.role|capitalize }}</div>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider my-2 opacity-10"></li>
+
+                        <!-- Profile Link -->
+                        {% if current_user.role == 'patient' %}
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-3 py-2 rounded-3" href="{{ url_for('patient.settings') }}">
+                                <i class="bi bi-person-gear text-primary fs-5"></i>
+                                <span class="fw-medium">My Profile</span>
+                            </a>
+                        </li>
+                        {% elif current_user.role == 'doctor' %}
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-3 py-2 rounded-3" href="{{ url_for('doctor.settings') }}">
+                                <i class="bi bi-person-gear text-primary fs-5"></i>
+                                <span class="fw-medium">My Profile</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Dark Mode Toggle -->
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-3 py-2 rounded-3" onclick="toggleTheme(); return false;" id="themeDropdownBtn">
+                                <i class="bi bi-moon-stars-fill text-primary fs-5" id="themeIcon"></i>
+                                <span id="themeLabel" class="fw-medium">Dark Mode</span>
+                                <span class="ms-auto fw-bold" id="themeStatusPill" style="font-size:.68rem; padding:2px 10px; border-radius:999px; background: var(--apple-bg-light); border: 1px solid rgba(0,0,0,0.1); color: var(--text-muted);">Off</span>
+                            </button>
+                        </li>
+
+                        <li><hr class="dropdown-divider my-2 opacity-10"></li>
+
+                        <!-- Logout -->
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-3 py-2 rounded-3 text-danger" href="{{ url_for('auth.logout') }}">
+                                <i class="bi bi-box-arrow-right fs-5"></i>
+                                <span class="fw-medium">Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages pb-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show rounded-pill shadow-sm border-0 d-flex align-items-center" role="alert">
+                {% if category == 'success' %}<i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                {% elif category == 'danger' %}<i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                {% elif category == 'info' %}<i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                {% elif category == 'warning' %}<i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                {% endif %}
+                <div class="fw-medium">{{ message }}</div>
+                <button type="button" class="btn-close ms-auto position-relative top-0 right-0 p-3" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        <div class="page-content">
+
+{% else %}
+<!-- ===================================================================
+     PUBLIC LAYOUT (login, register, portal-select)
+     =================================================================== -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="container mt-3">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show rounded-pill shadow-sm border-0 d-flex align-items-center">
+        {{ message }}
+        <button type="button" class="btn-close position-relative top-0 right-0 p-3" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+{% endif %}
+
+    {% block content %}{% endblock %}
+
+{% if current_user.is_authenticated %}
+        </div><!-- /page-content -->
+    </main>
+</div><!-- /app-layout -->
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/healthvault.js') }}?v=1.4"></script>
+
+<script>
+// ── Back-Forward Cache (bfcache) guard ────────────────────────────────
+// When the browser restores a page from bfcache after pressing Back,
+// the 'pageshow' event fires with persisted=true.
+// We detect this and force a full reload so the server can check the
+// session — if logged out, Flask redirects to portal-select.
+window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+        // Page was served from bfcache — force fresh request to server
+        window.location.reload();
+    }
+});
+
+// ── Theme Toggle (Light default, Dark opt-in) ─────────────────────────
+function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    document.documentElement.classList.toggle('dark-mode', isDark);
+    localStorage.setItem('hv-theme', isDark ? 'dark' : 'light');
+    updateThemeBtn(isDark);
+}
+
+function updateThemeBtn(isDark) {
+    const icon  = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    const pill  = document.getElementById('themeStatusPill');
+    if (icon)  icon.className  = isDark ? 'bi bi-sun-fill text-primary fs-5' : 'bi bi-moon-stars-fill text-primary fs-5';
+    if (label) label.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    if (pill) {
+        pill.textContent  = isDark ? 'On' : 'Off';
+        pill.style.background = isDark ? 'var(--apple-panel-dark)' : 'var(--apple-bg-light)';
+    }
+}
+
+// ── Sidebar Minimize ──────────────────────────────────────────────────────
+function toggleSidebarMinimize() {
+    const isMin = document.body.classList.toggle('sidebar-minimized');
+    localStorage.setItem('hv-sidebar', isMin ? 'minimized' : 'expanded');
+    const icon = document.getElementById('minimizeIcon');
+    if (icon) icon.className = isMin ? 'bi bi-layout-sidebar text-secondary' : 'bi bi-layout-sidebar-reverse text-secondary';
+}
+
+// Mobile sidebar toggle
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarToggleBtn = document.getElementById('sidebarToggle');
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('sidebar-open');
+        });
+    }
+});
+
+// Initialise button state on load
+document.addEventListener('DOMContentLoaded', () => {
+    const isDark = document.body.classList.contains('dark-mode');
+    updateThemeBtn(isDark);
+    // Restore sidebar minimized state
+    if (localStorage.getItem('hv-sidebar') === 'minimized') {
+        document.body.classList.add('sidebar-minimized');
+        const icon = document.getElementById('minimizeIcon');
+        if (icon) icon.className = 'bi bi-layout-sidebar text-secondary';
+    }
+    // Auto-populate title attributes on nav links for minimized-mode tooltips
+    document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
+        const textSpan = link.querySelector('.nav-text');
+        if (textSpan) {
+            const text = textSpan.textContent.trim();
+            if (text && !link.hasAttribute('title')) link.setAttribute('title', text);
+        }
+    });
+});
+
+// ── Live Search JS ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('globalSearchInput');
+    const searchResults = document.getElementById('liveSearchResults');
+    const searchList = document.getElementById('liveSearchList');
+    const searchStatus = document.getElementById('liveSearchStatus');
+    
+    if (searchInput && searchResults) {
+        let debounceTimer;
+        
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            if (query.length > 0) {
+                searchResults.style.display = 'block';
+                searchStatus.style.display = 'block';
+                searchList.innerHTML = '';
+                searchStatus.innerHTML = '<div class="text-center my-3"><div class="spinner-border text-teal spinner-border-sm" role="status"></div></div>';
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    fetch('/api/search/live?q=' + encodeURIComponent(query))
+                        .then(r => r.json())
+                        .then(data => {
+                            searchStatus.style.display = 'none';
+                            searchList.innerHTML = '';
+                            if (data.results && data.results.length > 0) {
+                                data.results.forEach(item => {
+                                    const a = document.createElement('a');
+                                    a.className = 'list-group-item list-group-item-action d-flex align-items-center gap-3 border-0 py-2 px-3';
+                                    a.href = item.url || 'javascript:void(0)';
+                                    a.style.background = 'transparent';
+                                    a.style.color = 'var(--hv-text-1)';
+                                    a.style.cursor = 'pointer';
+                                    
+                                    if(!item.url && item.action_id) {
+                                        a.onclick = function() {
+                                            searchInput.value = item.action_id;
+                                            document.getElementById('globalSearchForm').submit();
+                                        };
+                                    }
+                                    a.innerHTML = `
+                                        <div class="text-teal" style="font-size: 1.2rem;"><i class="bi ${item.icon}"></i></div>
+                                        <div>
+                                            <div class="fw-bold" style="color: var(--hv-text-1); font-size: 0.9rem; margin-bottom:2px;">${item.title}</div>
+                                            <div class="small" style="color: var(--hv-text-3); font-size: 0.75rem;">${item.type}</div>
+                                        </div>
+                                    `;
+                                    searchList.appendChild(a);
+                                });
+                            } else {
+                                searchStatus.style.display = 'block';
+                                searchStatus.innerHTML = '<div class="text-center text-muted my-2"><i class="bi bi-info-circle me-1"></i> No results found.</div>';
+                            }
+                        })
+                        .catch(() => {
+                            searchStatus.style.display = 'block';
+                            searchStatus.innerHTML = '<div class="text-center text-danger my-2"><i class="bi bi-exclamation-triangle me-1"></i> Error searching.</div>';
+                        });
+                }, 150);
+            } else {
+                searchResults.style.display = 'none';
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+        
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim().length > 0) {
+                searchResults.style.display = 'block';
+            }
+        });
+    }
+});
+
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

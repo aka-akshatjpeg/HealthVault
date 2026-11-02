@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-greeting mb-4">
+    <h1>Patient History</h1>
+    <p class="text-muted">A complete record of your past patient consultations.</p>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0" style="border-radius: var(--radius-xl); overflow: hidden;">
+            <div class="card-header bg-gray-50 border-bottom d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 fw-bold">All Consultations</h5>
+                <form action="{{ url_for('doctor.patient_search') }}" method="GET" class="d-inline-flex">
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <input type="text" name="hv_id" class="form-control" placeholder="Search by HV-ID..." style="text-transform: uppercase;">
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4 py-3 border-0">Date</th>
+                                <th class="py-3 border-0">Patient</th>
+                                <th class="py-3 border-0">Clinical Notes</th>
+                                <th class="py-3 border-0">Prescription</th>
+                                <th class="px-4 py-3 border-0 text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enc in recent_consultations %}
+                            <tr style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalEnc{{ enc.id }}">
+                                <td class="px-4">
+                                    <span class="fw-semibold">{{ enc.encounter_date.strftime('%d %b %Y') }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-avatar bg-primary-light text-primary" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                            {{ enc.patient.full_name[0] }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ enc.patient.full_name }}</div>
+                                            <div class="text-muted small">{{ enc.patient.health_identity.hv_id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="max-width: 250px;">
+                                    <div class="text-truncate text-muted small" title="{{ enc.clinical_notes }}">
+                                        {{ enc.clinical_notes or '<span class="fst-italic">No notes</span>'|safe }}
+                                    </div>
+                                </td>
+                                <td style="max-width: 250px;">
+                                    {% if enc.prescription %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="bi bi-file-medical me-1"></i>Prescribed
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted small fst-italic">None</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 text-end">
+                                    <a href="{{ url_for('doctor.patient_records', patient_id=enc.patient.id) }}" class="btn btn-outline-primary btn-sm rounded-pill" onclick="event.stopPropagation();">
+                                        <i class="bi bi-folder2-open me-1"></i>Patient File
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-journal-x fs-1 d-block mb-3 opacity-25"></i>
+                                    No past consultations found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Encounter Detail Modals -->
+{% for enc in recent_consultations %}
+<div class="modal fade" id="modalEnc{{ enc.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-xl);">
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                <div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-2">
+                        <i class="bi bi-journal-medical me-1"></i> Consultation Details
+                    </span>
+                    <h4 class="modal-title fw-black mb-1">{{ enc.doctor_name }}</h4>
+                    <p class="text-muted small mb-0">{{ enc.facility }} • {{ enc.encounter_date.strftime('%d %B %Y') }}</p>
+                </div>
+                <button type="button" class="btn-close align-self-start" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Patient</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="user-avatar bg-primary-light text-primary" style="width: 28px; height: 28px; font-size: 0.8rem;">
+                                {{ enc.patient.full_name[0] }}
+                            </div>
+                            <div class="fw-semibold">{{ enc.patient.full_name }} <span class="text-muted fw-normal ms-1">({{ enc.patient.health_identity.hv_id }})</span></div>
+                        </div>
+                    </div>
+                    {% if enc.follow_up_date %}
+                    <div class="col-md-6">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Follow-up Date</div>
+                        <div class="fw-semibold text-primary"><i class="bi bi-calendar-event me-1"></i>{{ enc.follow_up_date.strftime('%d %b %Y') }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <div class="text-muted small fw-bold text-uppercase mb-2">Reason for Visit (Chief Complaint)</div>
+                    <div class="p-3 rounded-3" style="background: var(--input-bg); border: 1px solid var(--border-color);">
+                        {{ enc.reason or '<em class="text-muted">Not specified</em>'|safe }}
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Diagnosis</div>
+                        <div class="p-3 rounded-3 h-100" style="background: var(--input-bg); border: 1px solid var(--border-color);">
+                            {{ enc.diagnosis or '<em class="text-muted">Not specified</em>'|safe }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small fw-bold text-uppercase mb-2">Prescription / Medications</div>
+                        <div class="p-3 rounded-3 h-100" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: #6ee7b7; white-space: pre-wrap;">{{ enc.prescription or '<em class="text-muted opacity-75">No prescription issued</em>'|safe }}</div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-muted small fw-bold text-uppercase mb-2">Clinical Notes</div>
+                    <div class="p-3 rounded-3" style="background: var(--input-bg); border: 1px solid var(--border-color); white-space: pre-wrap; line-height: 1.6;">{{ enc.clinical_notes or '<em class="text-muted">No clinical notes recorded</em>'|safe }}</div>
+                </div>
+
+            </div>
+            <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                <div class="w-100 text-end">
+                    <a href="{{ url_for('doctor.patient_records', patient_id=enc.patient.id) }}" class="btn btn-outline-primary px-4 me-2">Open Patient File</a>
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            document.body.appendChild(modal);
+        });
+    });
+</script>
+{% endblock %}

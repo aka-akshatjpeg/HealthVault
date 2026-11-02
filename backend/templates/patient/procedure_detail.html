@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Procedure Detail - HealthVault{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Procedure Details</h2>
+    <p>Details about the procedure will be displayed here.</p>
+    <a href="{{ url_for('patient.procedures') }}" class="btn btn-secondary">Back to Procedures</a>
+</div>
+{% endblock %}

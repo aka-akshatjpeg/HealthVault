@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Doctor Dashboard — HealthVault{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Good morning, Dr. {{ provider.full_name }}</h1>
+    <p class="page-subtitle">Doctor Portal — manage your patient access requests</p>
+  </div>
+</div>
+
+<!-- Stat Row -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:28px;">
+
+  <div class="hv-card" style="padding:20px 24px;">
+    <p class="hv-label" style="margin-bottom:8px;">Pending Requests</p>
+    <div style="display:flex; align-items:baseline; gap:10px;">
+      <span style="font-size:2rem; font-weight:700; color:var(--hv-text-1); line-height:1;">
+        {{ recent_requests | selectattr('status','equalto','pending') | list | length }}
+      </span>
+      <span class="badge status-warning">Awaiting</span>
+    </div>
+  </div>
+
+  <div class="hv-card" style="padding:20px 24px;">
+    <p class="hv-label" style="margin-bottom:8px;">Total Access Requests</p>
+    <div style="display:flex; align-items:baseline; gap:10px;">
+      <span style="font-size:2rem; font-weight:700; color:var(--hv-text-1); line-height:1;">
+        {{ recent_requests | length }}
+      </span>
+      <span class="badge status-neutral">All time</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent Access Requests -->
+<div class="hv-card" style="margin-bottom:28px;">
+  <div class="hv-card-header" style="display:flex; align-items:center; justify-content:space-between;">
+    <h2 class="hv-card-title">
+      <i class="bi bi-clock-history text-teal" style="margin-right:8px;"></i>Recent Access Requests
+    </h2>
+  </div>
+  <div class="hv-card-body" style="padding:0;">
+    {% if recent_requests %}
+    <div style="overflow-x:auto;">
+      <table class="table" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Purpose</th>
+            <th>Status</th>
+            <th>Requested</th>
+            <th style="text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in recent_requests %}
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:32px; height:32px; border-radius:50%; background:var(--hv-teal-light); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                  <i class="bi bi-person" style="color:var(--hv-teal); font-size:0.85rem;"></i>
+                </div>
+                <span style="font-weight:500; color:var(--hv-text-1);">{{ req.patient.full_name }}</span>
+              </div>
+            </td>
+            <td style="color:var(--hv-text-2); max-width:220px;">
+              <span style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ req.purpose }}</span>
+            </td>
+            <td>
+              {% if req.status == 'pending' %}
+                <span class="badge status-warning">Pending</span>
+              {% elif req.status == 'approved' %}
+                <span class="badge status-active">Approved</span>
+              {% else %}
+                <span class="badge status-neutral">{{ req.status | capitalize }}</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--hv-text-3); font-size:0.85rem; white-space:nowrap;">
+              {{ req.requested_at.strftime('%b %d, %Y') if req.requested_at else '—' }}
+            </td>
+            <td style="text-align:right;">
+              {% if req.status == 'approved' %}
+<a href="{{ url_for('doctor.patient_records', patient_id=req.patient_id) }}" class="btn btn-sm btn-teal">
+  <i class="bi bi-folder2-open" style="margin-right:4px;"></i>View Records
+</a>
+{% else %}
+<a href="{{ url_for('doctor.patient_search', search_query=req.patient.health_identity.hv_id) }}" class="btn btn-sm btn-secondary">
+  <i class="bi bi-person" style="margin-right:4px;"></i>View Patient
+</a>
+{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:48px 24px; text-align:center;">
+      <i class="bi bi-inbox" style="font-size:2rem; color:var(--hv-text-3); display:block; margin-bottom:12px;"></i>
+      <p style="color:var(--hv-text-3); margin:0;">No access requests yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="hv-card">
+  <div class="hv-card-header">
+    <h2 class="hv-card-title">Quick Actions</h2>
+  </div>
+  <div class="hv-card-body">
+    <div class="quick-actions">
+      <a href="{{ url_for('doctor.patient_search') }}" class="quick-action-item">
+        <div class="quick-action-icon">
+          <i class="bi bi-search"></i>
+        </div>
+        <span class="quick-action-label">Search Patient</span>
+      </a>
+      <a href="{{ url_for('doctor.history') }}" class="quick-action-item">
+        <div class="quick-action-icon">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <span class="quick-action-label">View History</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

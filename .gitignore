@@ -1,0 +1,53 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/venv/
+**/env/
+
+# Local databases, uploaded/private data, and logs
+**/instance/
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/uploads/
+**/*.log
+
+# JavaScript and Expo generated dependencies/state
+**/node_modules/
+**/.expo/
+**/dist/
+**/build/
+
+# Local scratch output
+backend/temp*.py
+backend/temp*.txt
+backend/out*.txt
+backend/test_ai_output.json
+temp_auth.py
+models.py
+backend/add_video_link.py
+backend/append_models.py
+backend/find_bad_urls.py
+backend/fix_*.py
+backend/patch*.py
+backend/rewrite_*.py
+backend/update_*.py
+backend/upgrade_ui.py
+backend/generate_templates.py
+backend/test_ai*.py
+HealthVaultMobile/AGENTS.md
+HealthVaultMobile/LICENSE
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/

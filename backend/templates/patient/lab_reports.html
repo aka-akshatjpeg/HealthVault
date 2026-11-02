@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-greeting mb-4">
+    <h1 class="fw-semibold">Lab Reports</h1>
+    <p class="text-muted">Your diagnostic and laboratory results.</p>
+</div>
+
+<div class="card border-0 shadow-sm mb-4 p-0 overflow-hidden" style="border-radius: var(--radius-lg);">
+        <ul class="list-group list-group-flush">
+            {% for report in reports %}
+            <a href="{{ url_for('patient.lab_report_detail', report_id=report.id) }}" class="list-group-item list-group-item-action p-4 border-bottom text-decoration-none">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-secondary">
+                            <i class="bi bi-file-earmark-medical fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-medium text-dark">{{ report.report_name }}</h5>
+                            <p class="mb-0 small text-muted">
+                                <i class="bi bi-hospital me-1"></i>{{ report.organization_name or report.laboratory or 'Unknown' }}
+                                {% if report.ordering_doctor %} &bull; {{ report.ordering_doctor }}{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted">{{ report.report_date.strftime('%d %b %Y') }}</div>
+                        <span class="badge bg-light text-dark border mt-1 fw-normal">{{ report.status|capitalize }}</span>
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <li class="list-group-item text-center py-5 border-0">
+                <i class="bi bi-flask fs-1 d-block mb-3 text-muted"></i>
+                <span class="text-muted">No lab reports found.</span>
+            </li>
+            {% endfor %}
+        </ul>
+</div>
+
+{% include 'patient/includes/uploaded_docs_section.html' %}
+{% endblock %}

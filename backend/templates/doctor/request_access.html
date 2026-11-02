@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Request Patient Access — HealthVault{% endblock %}
+{% block content %}
+
+<div style="max-width:640px;">
+
+  <!-- Page Header -->
+  <div class="page-header" style="margin-bottom:24px;">
+    <div>
+      <a href="{{ url_for('doctor.patient_search') }}" style="display:inline-flex; align-items:center; gap:6px; color:var(--hv-text-2); font-size:0.88rem; text-decoration:none; margin-bottom:10px;">
+        <i class="bi bi-arrow-left"></i> Back to Search
+      </a>
+      <h1 class="page-title">Request Patient Access</h1>
+      <p class="page-subtitle">Submit an access request — the patient will be notified to approve.</p>
+    </div>
+  </div>
+
+  <!-- Patient Summary -->
+  <div class="hv-card" style="margin-bottom:20px;">
+    <div class="hv-card-body" style="padding:16px 20px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:42px; height:42px; border-radius:50%; background:var(--hv-teal-light); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <i class="bi bi-person" style="font-size:1.1rem; color:var(--hv-teal);"></i>
+        </div>
+        <div>
+          <p style="margin:0; font-weight:600; color:var(--hv-text-1); font-size:1rem;">{{ patient.full_name }}</p>
+          <p style="margin:0; font-family:monospace; font-size:0.85rem; color:var(--hv-teal);">{% if patient.health_identity %}{{ patient.health_identity.hv_id }}{% endif %}</p>
+        </div>
+        <div style="margin-left:auto;">
+          <span class="badge status-neutral">Target Patient</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="hv-card">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-key text-teal" style="margin-right:8px;"></i>Access Details
+      </h2>
+    </div>
+    <div class="hv-card-body">
+      <form method="POST" action="{{ url_for('doctor.request_access', patient_id=patient.id) }}" style="display:flex; flex-direction:column; gap:20px;">
+        {{ csrf_token() if csrf_token is defined }}
+
+        <!-- Purpose -->
+        <div>
+          <label for="purpose" class="hv-label" style="display:block; margin-bottom:6px;">
+            Purpose of Access <span style="color:var(--hv-red);">*</span>
+          </label>
+          <textarea
+            id="purpose"
+            name="purpose"
+            rows="3"
+            required
+            placeholder="Describe why you need access to this patient's records…"
+            style="width:100%; box-sizing:border-box; padding:12px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.92rem; resize:vertical; font-family:inherit;"
+          ></textarea>
+        </div>
+
+        <!-- Duration -->
+        <div>
+          <label for="duration" class="hv-label" style="display:block; margin-bottom:6px;">Access Duration</label>
+          <select
+            id="duration"
+            name="duration"
+            style="width:100%; padding:11px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); font-size:0.92rem; cursor:pointer;"
+          >
+            <option value="6">6 hours</option>
+            <option value="12">12 hours</option>
+            <option value="24" selected>24 hours</option>
+            <option value="48">48 hours</option>
+            <option value="72">72 hours</option>
+          </select>
+        </div>
+
+        <div class="hv-divider"></div>
+
+        <!-- Categories -->
+        <div>
+          <p class="hv-label" style="margin-bottom:12px;">Record Categories Requested</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            {% set categories = [
+              ('Lab Reports',    'bi-file-medical'),
+              ('Medications',    'bi-capsule'),
+              ('Allergies',      'bi-exclamation-triangle'),
+              ('Conditions',     'bi-heart-pulse'),
+              ('Vaccinations',   'bi-shield-plus'),
+              ('Procedures',     'bi-scissors'),
+              ('Encounters',     'bi-hospital')
+            ] %}
+            {% for cat, icon in categories %}
+            <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:var(--hv-radius); border:1px solid var(--hv-border); cursor:pointer; transition:border-color .15s, background .15s;" class="hover-bg">
+              <input type="checkbox" name="categories" value="{{ cat }}" style="accent-color:var(--hv-teal); width:16px; height:16px; flex-shrink:0;">
+              <i class="bi {{ icon }}" style="color:var(--hv-text-2); font-size:0.95rem;"></i>
+              <span style="font-size:0.9rem; color:var(--hv-text-1);">{{ cat }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="hv-divider"></div>
+
+        <!-- Privacy Note -->
+        <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 16px; background:var(--hv-surface-2); border-radius:var(--hv-radius); border:1px solid var(--hv-border);">
+          <i class="bi bi-info-circle" style="color:var(--hv-text-3); margin-top:2px; flex-shrink:0;"></i>
+          <p style="margin:0; font-size:0.85rem; color:var(--hv-text-2);">
+            The patient will be notified and must approve this request before access is granted.
+            Access will automatically expire after the selected duration.
+          </p>
+        </div>
+
+        <!-- Submit -->
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="btn btn-teal btn-lg">
+            <i class="bi bi-send" style="margin-right:8px;"></i>Send Request
+          </button>
+          <a href="{{ url_for('doctor.patient_search') }}" class="btn btn-secondary btn-lg">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

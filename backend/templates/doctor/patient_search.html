@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Find Patient — HealthVault{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Find Patient</h1>
+    <p class="page-subtitle">Search by HealthVault ID to locate a patient record</p>
+  </div>
+</div>
+
+<!-- Search Card -->
+<div style="max-width:560px;">
+  <div class="hv-card" style="margin-bottom:20px;">
+    <div class="hv-card-header">
+      <h2 class="hv-card-title">
+        <i class="bi bi-search text-teal" style="margin-right:8px;"></i>Enter HealthVault ID
+      </h2>
+    </div>
+    <div class="hv-card-body">
+      <form method="GET" action="{{ url_for('doctor.patient_search') }}" style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label for="search_query" class="hv-label" style="display:block; margin-bottom:8px;">HealthVault ID or Aadhaar Number</label>
+          <input
+            id="search_query"
+            type="text"
+            name="search_query"
+            class="form-control"
+            placeholder="HV-XXXXX or 12-digit Aadhaar"
+            autocomplete="off"
+            style="font-size:1.05rem; letter-spacing:0.04em; padding:12px 16px; border-radius:var(--hv-radius); border:1px solid var(--hv-border-strong); background:var(--hv-surface-2); color:var(--hv-text-1); width:100%; box-sizing:border-box;"
+            value="{{ request.args.get('search_query', request.args.get('hv_id', '')) }}"
+          >
+          <p style="margin:6px 0 0; font-size:0.8rem; color:var(--hv-text-3);">Format: HV-XXXXX or xxxx-xxxx-xxxx</p>
+        </div>
+
+        {% if error %}
+        <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 16px; background:var(--hv-red-light); border:1px solid var(--hv-red); border-radius:var(--hv-radius); color:var(--hv-red);">
+          <i class="bi bi-exclamation-circle-fill" style="margin-top:2px; flex-shrink:0;"></i>
+          <span style="font-size:0.9rem;">{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <div>
+          <button type="submit" class="btn btn-teal btn-lg" style="width:100%;">
+            <i class="bi bi-search" style="margin-right:8px;"></i>Search
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Patient Result -->
+  {% if patient %}
+  <div class="hv-card reveal">
+    <div class="hv-card-header" style="display:flex; align-items:center; justify-content:space-between;">
+      <h2 class="hv-card-title">
+        <i class="bi bi-person-circle text-teal" style="margin-right:8px;"></i>Patient Found
+      </h2>
+      <span class="badge status-active">Match</span>
+    </div>
+    <div class="hv-card-body">
+      <div style="display:grid; gap:12px; margin-bottom:20px;">
+        <div class="record-row" style="border:none; padding:0;">
+          <div style="display:flex; gap:32px; flex-wrap:wrap;">
+            <div>
+              <p class="hv-label" style="margin-bottom:2px;">Full Name</p>
+              <p style="margin:0; font-size:1.05rem; font-weight:600; color:var(--hv-text-1);">{{ patient.full_name }}</p>
+            </div>
+            <div>
+              <p class="hv-label" style="margin-bottom:2px;">HealthVault ID</p>
+              <p style="margin:0; font-family:monospace; font-size:0.95rem; color:var(--hv-teal);">{{ patient.health_identity.hv_id }}</p>
+            </div>
+            <div>
+              <p class="hv-label" style="margin-bottom:2px;">Blood Group</p>
+              <p style="margin:0; font-weight:600; color:var(--hv-text-1);">{{ patient.blood_group or '—' }}</p>
+            </div>
+            <div>
+              <p class="hv-label" style="margin-bottom:2px;">Date of Birth</p>
+              <p style="margin:0; color:var(--hv-text-2);">
+                {{ patient.date_of_birth.strftime('%d %b %Y') if patient.date_of_birth else '—' }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hv-divider"></div>
+
+      <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
+        <a href="{{ url_for('doctor.request_access', patient_id=patient.id) }}" class="btn btn-teal">
+          <i class="bi bi-key" style="margin-right:6px;"></i>Request Access
+        </a>
+        {% if access_granted %}
+        <a href="{{ url_for('doctor.patient_records', patient_id=patient.id) }}" class="btn btn-secondary">
+          <i class="bi bi-folder2-open" style="margin-right:6px;"></i>View Records
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

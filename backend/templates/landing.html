@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthVault — Your Health, Always With You</title>
+
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+
+    <style>\n  /* Fix scrolling for public pages */\n  body { overflow-y: auto !important; height: auto !important; }
+        /* ── Reset & Base ─────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy:        #0A1628;
+            --navy-mid:    #112240;
+            --teal:        #1A9E8F;
+            --teal-light:  rgba(26, 158, 143, 0.09);
+            --teal-mid:    rgba(26, 158, 143, 0.18);
+            --text-1:      #0A1628;
+            --text-2:      #3D5066;
+            --text-3:      #7A90A4;
+            --border:      #E8EDF3;
+            --border-mid:  #C5D0DC;
+            --surface:     #FFFFFF;
+            --bg:          #F7F9FC;
+            --radius:      12px;
+            --radius-lg:   16px;
+            --radius-xl:   20px;
+            --radius-pill: 999px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+
+        /* ── Navbar ───────────────────────────────────────── */
+        .lp-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+        }
+        .lp-navbar .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .lp-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .lp-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--navy);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+        }
+        .lp-logo-text {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy);
+            letter-spacing: -0.02em;
+        }
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ── Buttons ──────────────────────────────────────── */
+        .btn-lp {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 20px;
+            border-radius: var(--radius-pill);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            border: none;
+            white-space: nowrap;
+        }
+        .btn-lp-ghost {
+            background: transparent;
+            color: var(--text-2);
+            border: 1px solid var(--border-mid);
+        }
+        .btn-lp-ghost:hover {
+            background: var(--bg);
+            color: var(--text-1);
+            border-color: var(--text-3);
+        }
+        .btn-lp-navy {
+            background: var(--navy);
+            color: #fff;
+        }
+        .btn-lp-navy:hover {
+            background: #112240;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .btn-lp-teal {
+            background: var(--teal);
+            color: #fff;
+        }
+        .btn-lp-teal:hover {
+            background: #158A7D;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .btn-lp-outline {
+            background: transparent;
+            color: var(--navy);
+            border: 1.5px solid var(--border-mid);
+        }
+        .btn-lp-outline:hover {
+            background: var(--bg);
+            border-color: var(--navy);
+        }
+
+        /* ── Hero ─────────────────────────────────────────── */
+        .lp-hero {
+            padding: 96px 24px 80px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--teal-light);
+            border: 1px solid var(--teal-mid);
+            color: var(--teal);
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: var(--radius-pill);
+            margin-bottom: 28px;
+        }
+        .hero-title {
+            font-size: clamp(2.6rem, 5.5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+            color: var(--navy);
+            margin-bottom: 22px;
+        }
+        .hero-title .teal { color: var(--teal); }
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-2);
+            line-height: 1.7;
+            max-width: 520px;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+        .hero-ctas {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        .hero-ctas .btn-lp {
+            padding: 13px 28px;
+            font-size: 0.95rem;
+        }
+        .hero-demo-note {
+            font-size: 0.78rem;
+            color: var(--text-3);
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .hero-demo-note i { margin-top: 1px; flex-shrink: 0; }
+
+        /* Hero right card */
+        .hero-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            box-shadow: 0 8px 32px rgba(10, 22, 40, 0.08);
+        }
+        .hero-card-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 16px;
+        }
+        .record-comparison {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .record-block {
+            border-radius: var(--radius);
+            padding: 14px 16px;
+        }
+        .record-block.fragmented {
+            background: #FFF8F5;
+            border: 1px solid #FDDCCC;
+        }
+        .record-block.unified {
+            background: var(--teal-light);
+            border: 1px solid var(--teal-mid);
+        }
+        .rb-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .fragmented .rb-title { color: #C05428; }
+        .unified .rb-title { color: var(--teal); }
+        .rb-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .rb-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+        }
+        .fragmented .rb-item { color: #7A4030; }
+        .unified .rb-item { color: #115E56; }
+        .rb-item i { font-size: 0.75rem; flex-shrink: 0; }
+
+        .hero-card-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-3);
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .hero-card-divider::before,
+        .hero-card-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Hero stats strip */
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        .hero-stat {
+            background: var(--surface);
+            padding: 14px 12px;
+            text-align: center;
+        }
+        .hs-number {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--navy);
+            line-height: 1;
+            margin-bottom: 3px;
+        }
+        .hs-label {
+            font-size: 0.7rem;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+
+        /* ── Section Common ───────────────────────────────── */
+        .lp-section {
+            padding: 88px 24px;
+        }
+        .lp-section-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-eyebrow {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--navy);
+            line-height: 1.15;
+            margin-bottom: 14px;
+        }
+        .section-sub {
+            font-size: 1rem;
+            color: var(--text-2);
+            line-height: 1.7;
+            max-width: 540px;
+        }
+        .section-sub.centered { margin: 0 auto; text-align: center; }
+
+        /* ── How It Works ─────────────────────────────────── */
+        .hiw-bg { background: var(--surface); }
+        .hiw-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            position: relative;
+            margin-top: 56px;
+        }
+        .hiw-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            position: relative;
+        }
+        /* connector line between steps */
+        .hiw-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 22px;
+            right: -1px;
+            width: 50%;
+            height: 1.5px;
+            background: var(--border-mid);
+        }
+        .hiw-step:not(:first-child)::before {
+            content: '';
+            position: absolute;
+            top: 22px;
+            left: -1px;
+            width: 50%;
+            height: 1.5px;
+            background: var(--border-mid);
+        }
+        .hiw-number {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--navy);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+        .hiw-step.active-step .hiw-number {
+            background: var(--teal);
+        }
+        .hiw-step-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 8px;
+        }
+        .hiw-step-desc {
+            font-size: 0.82rem;
+            color: var(--text-2);
+            line-height: 1.6;
+        }
+
+        /* ── Features ─────────────────────────────────────── */
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 52px;
+        }
+        .feat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px 28px;
+            transition: border-color 0.18s, box-shadow 0.18s;
+        }
+        .feat-card:hover {
+            border-color: var(--teal-mid);
+            box-shadow: 0 6px 24px rgba(26, 158, 143, 0.06);
+        }
+        .feat-icon-wrap {
+            width: 44px;
+            height: 44px;
+            background: var(--teal-light);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--teal);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        .feat-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 10px;
+        }
+        .feat-desc {
+            font-size: 0.875rem;
+            color: var(--text-2);
+            line-height: 1.65;
+        }
+
+        /* ── For Providers ────────────────────────────────── */
+        .providers-bg { background: var(--surface); }
+        .checklist {
+            list-style: none;
+            padding: 0;
+            margin: 24px 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: var(--text-2);
+            line-height: 1.5;
+        }
+        .checklist li .check-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--teal-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--teal);
+            font-size: 0.65rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .demo-table-wrap {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .demo-table-head {
+            padding: 14px 20px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-3);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .demo-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            background: var(--surface);
+        }
+        .demo-row:last-child { border-bottom: none; }
+        .demo-row:hover { background: var(--bg); }
+        .demo-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--navy);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .demo-avatar.teal { background: var(--teal); }
+        .demo-info { flex: 1; min-width: 0; }
+        .demo-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--navy);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .demo-role {
+            font-size: 0.75rem;
+            color: var(--text-3);
+        }
+        .demo-cred {
+            font-size: 0.78rem;
+            color: var(--text-3);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            text-align: right;
+        }
+        .demo-cred span {
+            display: block;
+            color: var(--text-2);
+        }
+        .demo-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: var(--radius-pill);
+        }
+        .demo-badge.patient {
+            background: rgba(26, 158, 143, 0.1);
+            color: var(--teal);
+        }
+        .demo-badge.doctor {
+            background: rgba(10, 22, 40, 0.07);
+            color: var(--navy);
+        }
+        .demo-badge.lab {
+            background: rgba(245, 158, 11, 0.1);
+            color: #B45309;
+        }
+
+        /* ── Footer ───────────────────────────────────────── */
+        .lp-footer {
+            background: var(--navy);
+            color: rgba(255, 255, 255, 0.55);
+            padding: 56px 24px 36px;
+        }
+        .lp-footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .footer-logo-text {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+        }
+        .footer-tagline {
+            font-size: 0.825rem;
+            color: rgba(255, 255, 255, 0.45);
+            margin-bottom: 0;
+        }
+        .footer-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 36px 0 24px;
+        }
+        .footer-disclaimer {
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.3);
+            line-height: 1.6;
+        }
+        .footer-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .footer-copyright {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .footer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(26, 158, 143, 0.15);
+            border: 1px solid rgba(26, 158, 143, 0.25);
+            color: #2DC7B4;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            padding: 4px 12px;
+            border-radius: var(--radius-pill);
+        }
+
+        /* ── Utility ──────────────────────────────────────── */
+        .text-teal { color: var(--teal) !important; }
+        .text-navy { color: var(--navy) !important; }
+        .text-muted-lp { color: var(--text-3) !important; }
+
+        /* ── Responsive ───────────────────────────────────── */
+        @media (max-width: 991px) {
+            .lp-hero { padding: 60px 20px 56px; }
+            .hero-right { margin-top: 48px; }
+            .hiw-steps { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+            .hiw-step::after, .hiw-step::before { display: none; }
+            .feat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 767px) {
+            .lp-section { padding: 60px 20px; }
+            .feat-grid { grid-template-columns: 1fr; }
+            .hiw-steps { grid-template-columns: 1fr; gap: 28px; }
+            .hero-ctas .btn-lp { width: 100%; justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            .nav-actions .btn-lp-ghost { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════
+         NAVBAR
+    ═══════════════════════════════════════════ -->
+    <nav class="lp-navbar">
+        <div class="nav-inner">
+            <a href="#" class="lp-logo">
+                <div class="lp-logo-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <span class="lp-logo-text">HealthVault</span>
+            </a>
+            <div class="nav-actions">
+                <a href="{{ url_for('auth.portal_select') }}" class="btn-lp btn-lp-ghost">Log In</a>
+                <a href="{{ url_for('auth.portal_select') }}" class="btn-lp btn-lp-navy">
+                    Get Started <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ═══════════════════════════════════════════
+         HERO
+    ═══════════════════════════════════════════ -->
+    <section style="background: var(--surface); border-bottom: 1px solid var(--border);">
+        <div class="lp-hero">
+            <div class="row align-items-center g-5">
+
+                <!-- Left -->
+                <div class="col-lg-6">
+                    <div class="hero-tag">
+                        <i class="bi bi-globe-asia-australia"></i>
+                        Built for India &nbsp;·&nbsp; ABDM-compatible
+                    </div>
+                    <h1 class="hero-title">
+                        Your Health.<br>
+                        <span class="teal">Always With You.</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Organize, understand, and securely share your lifelong health records —
+                        from every hospital, lab, and clinic.
+                    </p>
+                    <div class="hero-ctas">
+                        <a href="{{ url_for('auth.portal_select') }}" class="btn-lp btn-lp-navy">
+                            Get Started Free <i class="bi bi-arrow-right"></i>
+                        </a>
+                        <a href="{{ url_for('auth.portal_select') }}" class="btn-lp btn-lp-outline">
+                            Sign In
+                        </a>
+                        <a href="https://youtu.be/x3hX3qKRadc" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; color: var(--navy); font-weight: 600; font-size: 0.95rem; text-decoration: none; padding: 13px 16px; margin-left: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+                            <i class="bi bi-play-circle-fill" style="color: var(--teal); font-size: 1.2rem;"></i> Watch how HealthVault works
+                        </a>
+                    </div>
+                    <div class="hero-demo-note">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Demo credentials available on the login page. No sign-up required to explore.</span>
+                    </div>
+                </div>
+
+                <!-- Right: Value Prop Card -->
+                <div class="col-lg-6 hero-right">
+                    <div class="hero-card">
+                        <div class="hero-card-label">Your health record — before &amp; after</div>
+                        <div class="record-comparison">
+                            <div class="record-block fragmented">
+                                <div class="rb-title"><i class="bi bi-exclamation-triangle me-1"></i>Fragmented</div>
+                                <div class="rb-items">
+                                    <div class="rb-item"><i class="bi bi-x-circle-fill"></i> Lab report at Apollo — physical paper</div>
+                                    <div class="rb-item"><i class="bi bi-x-circle-fill"></i> Prescription at Fortis — WhatsApp photo</div>
+                                    <div class="rb-item"><i class="bi bi-x-circle-fill"></i> Scan at local clinic — lost</div>
+                                    <div class="rb-item"><i class="bi bi-x-circle-fill"></i> Blood report from 2019 — can't find</div>
+                                </div>
+                            </div>
+
+                            <div class="hero-card-divider">HealthVault</div>
+
+                            <div class="record-block unified">
+                                <div class="rb-title"><i class="bi bi-check-circle-fill me-1"></i>Unified vault</div>
+                                <div class="rb-items">
+                                    <div class="rb-item"><i class="bi bi-check-circle-fill"></i> All reports, prescriptions &amp; scans in one place</div>
+                                    <div class="rb-item"><i class="bi bi-check-circle-fill"></i> Searchable timeline from day one</div>
+                                    <div class="rb-item"><i class="bi bi-check-circle-fill"></i> Share with any doctor — instantly</div>
+                                    <div class="rb-item"><i class="bi bi-check-circle-fill"></i> You control who sees what, always</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hero-stats">
+                            <div class="hero-stat">
+                                <div class="hs-number text-teal">∞</div>
+                                <div class="hs-label">Record storage</div>
+                            </div>
+                            <div class="hero-stat">
+                                <div class="hs-number">3</div>
+                                <div class="hs-label">Portal types</div>
+                            </div>
+                            <div class="hero-stat">
+                                <div class="hs-number text-teal">ABDM</div>
+                                <div class="hs-label">Architecture</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════
+         HOW IT WORKS
+    ═══════════════════════════════════════════ -->
+    <section class="lp-section hiw-bg">
+        <div class="lp-section-inner">
+            <div class="text-center">
+                <div class="section-eyebrow">How it works</div>
+                <h2 class="section-title">Four steps to your health identity</h2>
+                <p class="section-sub centered">
+                    From setup to emergency access in minutes. Simple enough for anyone, powerful enough for providers.
+                </p>
+            </div>
+
+            <div class="hiw-steps">
+                <div class="hiw-step">
+                    <div class="hiw-number">1</div>
+                    <div class="hiw-step-title">Get Your Health ID</div>
+                    <div class="hiw-step-desc">Create a unique HealthVault ID linked to your ABHA identifier. Your digital health identity, for life.</div>
+                </div>
+                <div class="hiw-step active-step">
+                    <div class="hiw-number">2</div>
+                    <div class="hiw-step-title">Build Your Timeline</div>
+                    <div class="hiw-step-desc">Upload lab reports, prescriptions, and encounter notes. Everything indexed and searchable.</div>
+                </div>
+                <div class="hiw-step">
+                    <div class="hiw-number">3</div>
+                    <div class="hiw-step-title">Control Access</div>
+                    <div class="hiw-step-desc">Approve or deny provider access requests with granular consent. Revoke anytime, instantly.</div>
+                </div>
+                <div class="hiw-step">
+                    <div class="hiw-number">4</div>
+                    <div class="hiw-step-title">Emergency Access</div>
+                    <div class="hiw-step-desc">Generate an emergency QR card with critical info — visible to first responders without login.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════
+         FEATURES
+    ═══════════════════════════════════════════ -->
+    <section class="lp-section" style="background: var(--bg);">
+        <div class="lp-section-inner">
+            <div class="text-center">
+                <div class="section-eyebrow">Core features</div>
+                <h2 class="section-title">Built around your privacy &amp; continuity</h2>
+                <p class="section-sub centered">
+                    Every feature is designed with patient control at the centre.
+                </p>
+            </div>
+
+            <div class="feat-grid">
+                <!-- Feature 1 -->
+                <div class="feat-card">
+                    <div class="feat-icon-wrap"><i class="bi bi-clock-history"></i></div>
+                    <div class="feat-title">Lifelong Timeline</div>
+                    <p class="feat-desc">Every lab report, prescription, scan, and clinical note in a single chronological timeline — across every hospital and clinic you've ever visited.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="feat-card">
+                    <div class="feat-icon-wrap"><i class="bi bi-shield-check"></i></div>
+                    <div class="feat-title">Granular Consent</div>
+                    <p class="feat-desc">Decide exactly which records each provider can view. Set time-limited access windows, or revoke instantly. You remain the custodian of your data.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="feat-card">
+                    <div class="feat-icon-wrap"><i class="bi bi-diagram-3"></i></div>
+                    <div class="feat-title">ABDM Architecture</div>
+                    <p class="feat-desc">Built around the Ayushman Bharat Digital Mission framework. Designed for interoperability with India's emerging federated health data network.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="feat-card">
+                    <div class="feat-icon-wrap"><i class="bi bi-robot"></i></div>
+                    <div class="feat-title">AI Health Assistant</div>
+                    <p class="feat-desc">Ask questions about your reports in plain English. Understand what your test values mean, get plain-language summaries of your health history.</p>
+                </div>
+                <!-- Feature 5 -->
+                <div class="feat-card">
+                    <div class="feat-icon-wrap"><i class="bi bi-qr-code"></i></div>
+                    <div class="feat-title">Universal Health QR</div>
+                    <p class="feat-desc">A scannable QR code that identifies you to any HealthVault-enabled provider. Share your full vault or select records — one scan, instant access.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div class="feat-card">
+                    <div class="feat-icon-wrap"><i class="bi bi-lightning-charge"></i></div>
+                    <div class="feat-title">Emergency Card</div>
+                    <p class="feat-desc">Critical information — blood group, allergies, conditions, emergency contacts — always accessible, even without phone unlock or app login.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════
+         FOR PROVIDERS
+    ═══════════════════════════════════════════ -->
+    <section class="lp-section providers-bg">
+        <div class="lp-section-inner">
+            <div class="row align-items-start g-5">
+
+                <!-- Left: text -->
+                <div class="col-lg-5">
+                    <div class="section-eyebrow">For providers</div>
+                    <h2 class="section-title">A unified view of every patient</h2>
+                    <p class="section-sub" style="margin-bottom: 0;">
+                        Doctors, hospitals, and labs get a purpose-built portal — no paper chase, no missed history.
+                    </p>
+                    <ul class="checklist">
+                        <li>
+                            <span class="check-icon"><i class="bi bi-check-lg"></i></span>
+                            View complete patient timelines with consent-gated access
+                        </li>
+                        <li>
+                            <span class="check-icon"><i class="bi bi-check-lg"></i></span>
+                            Add clinical notes, prescriptions, and encounter summaries
+                        </li>
+                        <li>
+                            <span class="check-icon"><i class="bi bi-check-lg"></i></span>
+                            Labs upload reports directly to a patient's vault
+                        </li>
+                        <li>
+                            <span class="check-icon"><i class="bi bi-check-lg"></i></span>
+                            Request-based access — never unauthorized data pull
+                        </li>
+                        <li>
+                            <span class="check-icon"><i class="bi bi-check-lg"></i></span>
+                            Full audit trail of every access event
+                        </li>
+                    </ul>
+
+                    <div style="margin-top: 32px;">
+                        <a href="{{ url_for('auth.portal_select') }}" class="btn-lp btn-lp-teal">
+                            Access Provider Portal <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right: demo accounts table -->
+                <div class="col-lg-7">
+                    <div class="demo-table-wrap">
+                        <div class="demo-table-head">
+                            Demo accounts — explore any portal freely
+                        </div>
+
+                        <div class="demo-row">
+                            <div class="demo-avatar">AP</div>
+                            <div class="demo-info">
+                                <div class="demo-name">Aarav Patel</div>
+                                <div class="demo-role">Patient · Mumbai</div>
+                            </div>
+                            <span class="demo-badge patient">Patient</span>
+                            <div class="demo-cred">
+                                <span>aarav.patel / demo1234</span>
+                            </div>
+                        </div>
+
+                        <div class="demo-row">
+                            <div class="demo-avatar">SR</div>
+                            <div class="demo-info">
+                                <div class="demo-name">Sanya Rao</div>
+                                <div class="demo-role">Patient · Bengaluru</div>
+                            </div>
+                            <span class="demo-badge patient">Patient</span>
+                            <div class="demo-cred">
+                                <span>sanya.rao / demo1234</span>
+                            </div>
+                        </div>
+
+                        <div class="demo-row">
+                            <div class="demo-avatar teal">DK</div>
+                            <div class="demo-info">
+                                <div class="demo-name">Dr. Kavita Sharma</div>
+                                <div class="demo-role">Cardiologist · AIIMS Delhi</div>
+                            </div>
+                            <span class="demo-badge doctor">Doctor</span>
+                            <div class="demo-cred">
+                                <span>dr.kavita / demo1234</span>
+                            </div>
+                        </div>
+
+                        <div class="demo-row">
+                            <div class="demo-avatar teal">DM</div>
+                            <div class="demo-info">
+                                <div class="demo-name">Dr. Rohan Mehta</div>
+                                <div class="demo-role">General Physician · Pune</div>
+                            </div>
+                            <span class="demo-badge doctor">Doctor</span>
+                            <div class="demo-cred">
+                                <span>dr.rohan / demo1234</span>
+                            </div>
+                        </div>
+
+                        <div class="demo-row">
+                            <div class="demo-avatar" style="background: #B45309;">LL</div>
+                            <div class="demo-info">
+                                <div class="demo-name">Lal Path Labs</div>
+                                <div class="demo-role">Diagnostic Laboratory · Pan-India</div>
+                            </div>
+                            <span class="demo-badge lab">Lab</span>
+                            <div class="demo-cred">
+                                <span>lalpathlab / demo1234</span>
+                            </div>
+                        </div>
+
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-3); margin-top: 10px; padding-left: 4px;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        All demo data is synthetic. Credentials shown for prototype exploration only.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════
+         FOOTER
+    ═══════════════════════════════════════════ -->
+    <footer class="lp-footer">
+        <div class="lp-footer-inner">
+            <div class="row align-items-start g-4">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width:28px;height:28px;background:rgba(255,255,255,0.1);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <span class="footer-logo-text">HealthVault</span>
+                    </div>
+                    <p class="footer-tagline">Your health, always with you.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span class="footer-badge">
+                        <i class="bi bi-globe-asia-australia"></i>
+                        ABDM-compatible · India
+                    </span>
+                </div>
+            </div>
+
+            <div class="footer-divider"></div>
+
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    &copy; 2026 HealthVault. All rights reserved.
+                </div>
+                <div class="footer-disclaimer">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Prototype. Not for clinical use. All data is synthetic and for demonstration purposes only.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

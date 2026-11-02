@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-greeting mb-4">
+    <h1>Allergies & Reactions</h1>
+    <p>Your recorded allergies and intolerances.</p>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden" style="border-radius: var(--radius-lg);">
+    <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+            {% for alg in patient.allergies %}
+            <li class="list-group-item p-4"
+                style="cursor: pointer; transition: background .15s ease;"
+                onmouseover="this.style.background='var(--hover-bg, rgba(0,0,0,.03))'"
+                onmouseout="this.style.background=''"
+                data-bs-toggle="modal" data-bs-target="#algModal-{{ alg.id }}">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="{% if alg.severity == 'severe' or alg.severity == 'life-threatening' %}bg-danger{% elif alg.severity == 'moderate' %}bg-warning{% else %}bg-info{% endif %} bg-opacity-10 rounded p-3">
+                            <i class="bi bi-virus fs-4 {% if alg.severity == 'severe' or alg.severity == 'life-threatening' %}text-danger{% elif alg.severity == 'moderate' %}text-warning{% else %}text-info{% endif %}"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold">{{ alg.allergen }}</h5>
+                            <div class="text-muted small mt-1">
+                                Identified: <span class="fw-medium">{{ alg.date_identified.strftime('%d %b %Y') if alg.date_identified else 'Unknown' }}</span>
+                            </div>
+                            {% if alg.reaction %}
+                            <div class="text-muted small mt-1"><i class="bi bi-activity me-1"></i>Reaction: <strong>{{ alg.reaction }}</strong></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        {% if alg.severity == 'life-threatening' %}
+                            <span class="badge bg-danger border border-danger px-3 py-2 rounded-pill text-white"><i class="bi bi-exclamation-triangle-fill me-1"></i> Life-Threatening</span>
+                        {% elif alg.severity == 'severe' %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-3 py-2 rounded-pill"><i class="bi bi-exclamation-triangle me-1"></i> Severe</span>
+                        {% elif alg.severity == 'moderate' %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-3 py-2 rounded-pill"><i class="bi bi-exclamation-circle me-1"></i> Moderate</span>
+                        {% else %}
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle px-3 py-2 rounded-pill"><i class="bi bi-info-circle me-1"></i> Mild</span>
+                        {% endif %}
+                        <i class="bi bi-chevron-right text-muted small"></i>
+                    </div>
+                </div>
+            </li>
+            {% else %}
+            <li class="list-group-item text-muted text-center py-5">
+                <i class="bi bi-shield-check fs-1 d-block mb-3 text-muted opacity-25"></i>
+                No allergies recorded.
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- ── Allergy Detail Modals ─────────────────────────────────────── -->
+{% for alg in patient.allergies %}
+<div class="modal fade" id="algModal-{{ alg.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--card-bg); border-color: var(--border-color);">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Allergy Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3 pb-4">
+                <!-- Header -->
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="{% if alg.severity == 'severe' or alg.severity == 'life-threatening' %}bg-danger{% elif alg.severity == 'moderate' %}bg-warning{% else %}bg-info{% endif %} bg-opacity-10 rounded p-3">
+                        <i class="bi bi-virus fs-3 {% if alg.severity == 'severe' or alg.severity == 'life-threatening' %}text-danger{% elif alg.severity == 'moderate' %}text-warning{% else %}text-info{% endif %}"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ alg.allergen }}</h4>
+                        <div class="text-muted small">Identified: {{ alg.date_identified.strftime('%d %B %Y') if alg.date_identified else 'Date unknown' }}</div>
+                    </div>
+                </div>
+
+                <!-- Details grid -->
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="p-3 rounded" style="background: var(--body-bg);">
+                            <div class="text-muted small text-uppercase fw-bold mb-1">Severity</div>
+                            <div class="fw-semibold">
+                                {% if alg.severity == 'life-threatening' %}<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Life-Threatening</span>
+                                {% elif alg.severity == 'severe' %}<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Severe</span>
+                                {% elif alg.severity == 'moderate' %}<span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i>Moderate</span>
+                                {% else %}<span class="text-info"><i class="bi bi-info-circle me-1"></i>Mild</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded" style="background: var(--body-bg);">
+                            <div class="text-muted small text-uppercase fw-bold mb-1">Reaction</div>
+                            <div class="fw-semibold">{{ alg.reaction or 'Not specified' }}</div>
+                        </div>
+                    </div>
+                    {% if alg.source_organization %}
+                    <div class="col-12">
+                        <div class="p-3 rounded" style="background: var(--body-bg);">
+                            <div class="text-muted small text-uppercase fw-bold mb-1">Reported By</div>
+                            <div class="fw-semibold"><i class="bi bi-building me-1"></i>{{ alg.source_organization }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if alg.notes %}
+                <div>
+                    <div class="text-muted small text-uppercase fw-bold mb-2">Clinical Notes</div>
+                    <div class="p-3 rounded" style="background: var(--body-bg); border-left: 3px solid var(--primary);">
+                        <p class="mb-0 small">{{ alg.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.modal').forEach(function(m) { document.body.appendChild(m); });
+});
+</script>
+{% endblock %}
